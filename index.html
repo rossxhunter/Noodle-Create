@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Noodle Create - Collaborative Coding</title>
+  <script type="text/javascript" src="assets/js/script.js"></script>
+  <script type="text/javascript" src="assets/js/errorCheck.js"></script>
+  <script type="text/javascript" src="assets/js/decode.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet" />
+  <script>
+    $(document).ready(function() {
+      $('#bodyDiv').fadeIn('slow');
+
+      $('#startCodingButton').click(function() {
+        $('#welcome').fadeOut('slow', function() {
+          $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
+          //$('#mainTableDiv').fadeIn('slow');
+        });
+
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="bodyDiv">
+    <div id="navbar">
+      <ul>
+        <li id="logo">
+          <a href="index.html"> <img src="assets/images/logo.png" /> </a>
+        </li>
+        <li>
+          <a id="loginRegTabLink" href="#"><span id="loginRegTab">Login/Register</span></a>
+        </li>
+        <li class="normalTab"><a href="#">Learn</a></li>
+        <li class="normalTab"><a href="#">Create</a></li>
+      </ul>
+    </div>
+    <div id="mainBody">
+      <div id="welcome">
+        <br />Begin your coding journey with Noodle.<br /><br /> If you don't have an account yet, you can have a play by clicking below. <br /><br /><br /><br />
+        <a href="#">
+              <span onclick="showBoxes()" id="startCodingButton">Start Coding</span>
+          </a>
+      </div>
+      <div id="mainTableDiv">
+        <div class="table-div" style="width:100%">
+          <div class="table-div" style="width:55%">
+            <div class="tr-div">
+              <div id="editorContainer" class="td-div">
+                <div id="editorBorderDiv">
+                  <img id="editorBorder" src="assets/images/roundBox.png" />
+                </div>
+                <div id="editorDiv">
+                  <pre id="editor"></pre>
+                  <script src="ace/demo/kitchen-sink/require.js"></script>
+                  <script src="assets/js/setupEditor.js"></script>
+                  <script>
+                    setupEditor();
+                  </script>
+                </div>
+              </div>
+              <div id="toolbarDiv" class="td-div">
+                <a href="#">
+                  <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
+                </a>
+              </div>
+            </div>
+            <div class="tr-div">
+              <div class="td-div" id="noodleErrorsBoxContainer">
+                <div id="errorsBorderDiv">
+                  <img id="errorsBorder" src="assets/images/roundBoxLong.png" />
+                </div>
+                <div id="noodleErrorsBoxDiv">
+                  <textarea id="noodleErrorsBox" readonly>Any errors will appear here</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-div" style="width:45%">
+            <div class="tr-div">
+              <div class="td-div" id="noodleOutputBoxContainer">
+                <div id="outputBorderDiv">
+                  <img id="outputBorder" src="assets/images/roundBox.png" />
+                </div>
+                <div id="noodleOutputBoxDiv">
+                  <textarea id="noodleOutputBox" readonly>Output appears here</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

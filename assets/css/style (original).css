@@ -1,0 +1,276 @@
+body {
+    margin: 0;
+}
+
+#bodyDiv {
+    display: none;
+}
+
+#logo {
+    float: left;
+}
+
+#logo a:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
+
+#logo a img {
+    max-height: 100%;
+    max-width: auto;
+}
+
+#navbar {
+    max-width: 100%;
+    max-height: 70px;
+}
+
+#loginRegTab {
+    border-style: solid;
+    border-width: 1.5px;
+    display: inline;
+    padding: 5px;
+}
+
+#welcome {
+    font-family: "Josefin Sans", sans-serif;
+    color: #79cdcd;
+    font-size: 20pt;
+    text-align: center;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: absolute;
+    opacity: 0.9;
+    width: 100%;
+}
+
+li {
+    float: right;
+}
+
+
+li a {
+    display: block;
+    color: #79CDCD;
+    text-align: center;
+    padding: 14px 36px;
+    text-decoration: none;
+    height: 70px;
+    width: auto;
+    line-height: 70px;
+    font-family: "Open Sans", sans-serif;
+}
+
+.normalTab a:hover {
+    background-color: rgba(79, 205, 205, 1);
+    color: #ffffff;
+}
+
+#loginRegTabLink:hover span {
+    background-color: rgba(79, 205, 205, 1);
+    color: #ffffff;
+}
+
+#mainBody {
+    padding: 20px;
+    padding-top: 100px;
+    position: static;
+    overflow-x: hidden;
+    max-width: 100%;
+    z-index: -1;
+    font-family: "Open Sans", sans-serif;
+}
+
+#editor {
+    top: 10px;
+    right: 0;
+    bottom: 0;
+    left: 22px;
+    font-family: "Consolas";
+    font-size: 10pt;
+}
+
+#noodleOutputBoxDiv {
+    height: 90%;
+}
+
+#noodleOutputBox {
+    width: 90%;
+    border-style: hidden;
+    resize: none;
+    margin-bottom: 0%;
+    height: 100%;
+    font-family: "Consolas";
+    font-size: 10pt;
+    margin-left: 25px;
+    margin-top: 20px;
+    background-color: rgba(79, 205, 205, 0);
+    color:#ffffff;
+}
+
+#noodleOutputBoxContainer {
+    float: left;
+    width: 90%;
+
+    margin-left: 40px;
+}
+
+#noodleErrorsBox {
+    background-color: rgba(79, 205, 205, 0);
+    border-style: hidden;
+    resize: none;
+    width: 100%;
+    font-family: "Consolas";
+    font-size: 10pt;
+    color: white;
+}
+
+#noodleErrorsBoxDiv {
+    padding-left: 20px;
+    padding-top: 12px;
+    height : 40px;
+}
+
+#noodleErrorsBoxContainer {
+    padding-top: 40px;
+    width: 53%;
+
+}
+
+#editorBorderDiv {
+    position: absolute;
+    z-index: -1;
+    width: 55%;
+
+}
+
+#editorBorder {
+    width: 100%;
+    height: 100%;
+}
+
+#outputBorderDiv {
+    position: absolute;
+    z-index: -1;
+    width: 40%;
+
+}
+
+#outputBorder {
+    width: 100%;
+    height: 100%;
+}
+
+
+#errorsBorderDiv {
+    position: absolute;
+    z-index: -1;
+    width: 55%;
+    height: 60px;
+}
+
+#errorsBorder {
+    width: 100%;
+    height: 100%;
+}
+
+.table-div {
+    display: table;
+    float: left
+}
+
+.tr-div {
+    display: table-row
+}
+
+.td-div {
+    display: table-cell
+}
+
+#mainTable {
+    visibility: hidden;
+}
+
+#startCodingButton {
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "Josefin Sans";
+    color: #79cdcd;
+    border-style: solid;
+    border-color: #79cdcd;
+    padding:20px;
+    font-size: 25pt;
+}
+
+#startCodingButton:hover {
+    src: url(assets/images/startCodingHover.png);
+    border-style: none;
+    color: #ffffff;
+    background-color: #79cdcd;
+}
+
+#editorDiv {
+    width: 90%;
+    float: left;
+}
+
+#toolbarDiv {
+    float: left;
+    width:3%;
+    padding-left: 6%;
+    padding-top:20px;
+}
+
+#run {
+    width: 100%;
+    height: auto;
+}
+
+#run:hover {
+    src: url(assets/images/runHover.png);
+}
+
+.syntaxError {
+    position: absolute;
+    background: rgba(255, 0, 0, 0.2);
+    z-index: 20
+}
+
+.correctSyntax {
+    position: absolute;
+    background: rgba(0, 255, 0, 0.3);
+    z-index: 20
+}
+
+
+/*
+@media screen and (max-width: 980px) {
+  #navbar {
+      max-height: 90px;
+      font-size: 2em;
+  }
+  li a {
+    height: 90px;
+    line-height: 90px;
+  }
+  #logo a img {
+    max-height:90px;
+  }
+  #mainBody {
+    padding-top: 120px;
+  }
+  */
+
+
+}
