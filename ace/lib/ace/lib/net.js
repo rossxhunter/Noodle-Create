@@ -19,7 +19,7 @@ exports.get = function (url, callback) {
             callback(xhr.responseText);
         }
     };
-    //xhr.send(null);
+    xhr.send(null);
 };
 
 exports.loadScript = function(path, callback) {

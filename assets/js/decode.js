@@ -150,7 +150,13 @@ function removeSpacesAndParseType(varValue, varType) {
 function decode(line) {
     if (line.search("print ") == 0) {
         var output = line.substr(6, line.length - 6).replace(/^\s+/, '');
-        output = output.substr(1, output.length - 2);
+        if (isValid("printVar", line)) {
+            output = findVar(output).value;
+
+        }
+        else {
+            output = output.substr(1, output.length - 2);
+        }
         document.getElementById('noodleOutputBox').value += output;
     } else if (line.search(/int |float |string |char |bool/) == 0) {
         var varType = line.match(/[^\s]+/)[0];

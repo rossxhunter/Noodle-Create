@@ -30,7 +30,6 @@ function errorCheck(arrayOfLines) {
 }
 
 function addError(error) {
-    window.alert(error);
     document.getElementById('noodleErrorsBox').value += "-" + error + "\n";
 }
 
@@ -38,8 +37,21 @@ function checkLine(line, lineNumber) {
     var isCorrect = true;
     var error = "";
     if (line.search("print ") == 0) {
-        if (line.match(/^print\s+".*"\s*$/) == null) {
-            isCorrect = false;
+        if (isValid("print", line)) {
+
+            if (isValid("printVar", line)) {
+                var varName = line.substr(6, line.length - 4).match(/^[a-zA-Z_][a-zA-Z0-9_]*[^=\s]*/)[0];
+                var varEntry = findUnVar(varName);
+                if (varEntry == null) {
+                    isCorrect = false;
+                    addError("Undeclared variable on line " + lineNumber);
+                }
+            }
+        }
+        else {
+
+             isCorrect = false;
+             addError("Invalid print statement");
         }
     } else if (line.search(/int |float |string |char |bool/) == 0) {
         var varType = line.match(/[^\s]+/)[0];
@@ -64,7 +76,7 @@ function checkLine(line, lineNumber) {
                 uninitialisedVariables.push(newVar);
             }
         }
-    } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s.*$/) != null) {
+    } else if (isValid("var", line)) {
         var varName = line.match(/^[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
         var varValue = line.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
         var varType = findUnVar(varName);
@@ -91,6 +103,14 @@ function checkLine(line, lineNumber) {
         currentMarker = editor.session.addMarker(new Range(lineNumber - 1, 0, lineNumber - 1, 1), "syntaxError", "fullLine");
     }
     return isCorrect;
+}
+
+function isValid(type, line) {
+    switch (type) {
+        case "print" : return line.match(/^print\s+(".*"|[a-zA-Z_][a-zA-Z0-9_]*)\s*$/) != null; break;
+        case "printVar" : return line.match(/^print\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null; break;
+        case "var" : return line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s.*$/) != null; break;
+    }
 }
 
 function isCorrectFormat(line) {
