@@ -78,9 +78,9 @@ function checkLine(line, lineNumber) {
         }
     }
     else {
-        if (line.replace(/\s/g,'') != "") {
+        if (line.replace(/\s/g,'') != "" && line.match(/^\/\/.*$/) == null) {
             isCorrect = false;
-            error = "Unrecognised statement on line " + lineNumber;
+            addError("Unrecognised statement on line " + lineNumber);
         }
     }
     var Range = ace.require('ace/range').Range;
