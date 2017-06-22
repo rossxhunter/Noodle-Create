@@ -168,7 +168,7 @@ function isValid(type, line) {
             return line.match(/^print\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
             break;
         case "var":
-            return line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s.*$/) != null;
+            return line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s*.*$/) != null;
             break;
     }
 }
