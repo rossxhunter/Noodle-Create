@@ -144,8 +144,8 @@ function removeSpaces(expList) {
 
 function evaluateExpression(exp, type) {
     var expList = exp.split(/(\+|-|\*|\/|\(|\))/g);
-    expList = removeBlankEntries(expList);
     expList = removeSpaces(expList);
+    expList = removeBlankEntries(expList);
     var literalExpList = getLiteralExpList(expList);
     var i = 0;
     var operandStack = [];

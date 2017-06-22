@@ -50,7 +50,7 @@ textarea {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    visibility: hidden;
+    visibility: visible;
 }
 
 ul {
@@ -209,7 +209,7 @@ li a {
 }
 
 #mainTableDiv {
-    visibility:visible;
+    visibility:hidden;
 }
 
 #startCodingButton {
