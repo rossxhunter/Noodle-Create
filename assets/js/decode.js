@@ -6,6 +6,85 @@ function variable(type, name, value) {
 
 var variables = [];
 
+function escapeRegExp(string){
+    return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+}
+
+function decode(line) {
+    if (line.search("print ") == 0) {
+        decodePrint(line);
+    } else if (line.search(/int |float |string |char |bool/) == 0) {
+        decodeVarDec(line);
+    } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s.*$/) != null) {
+        decodeVarAss(line);
+    }
+}
+
+function decodePrint(line) {
+    var output = line.substr(6, line.length - 6).replace(/^\s+/, '');
+    if (isValid("printVar", line)) {
+        output = findVar(output).value;
+
+    }
+    else {
+        output = output.substr(1, output.length - 2);
+        var i = 0;
+        while (i < output.length) {
+            if (output.charAt(i) == '$') {
+                i += 1;
+                var varName = output.substr(i, output.length - i);
+                varName = varName.match(/^(.*?)\$/)[1];
+                while (output.charAt(i) != '$') {
+                    i += 1;
+                }
+                var varValue = findVar(varName).value;
+                var replace = "$" + varName + "$";
+                var re = new RegExp(escapeRegExp(replace),"g");
+                output = output.replace(re, varValue.toString());
+            }
+            i += 1;
+        }
+    }
+    document.getElementById('noodleOutputBox').value += output;
+}
+
+function decodeVarDec(line) {
+    var varType = line.match(/[^\s]+/)[0];
+    var varName = line.substr(varType.length + 1, line.length - varType.length + 1).match(/[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
+    var varValue = line.match(/=\s*(.*)$/);
+    if (varValue != null) {
+        varValue = evaluateExpression(varValue[1], varType);
+        varValue = removeSpacesAndParseType(varValue, varType);
+    } else {
+        varValue = getDefaultValue(varType);
+    }
+    var newVar = new variable(varType, varName, varValue);
+    variables.push(newVar);
+    document.getElementById('noodleOutputBox').value += newVar.name;
+    document.getElementById('noodleOutputBox').value += newVar.value;
+}
+
+function decodeVarAss(line) {
+    var varName = line.match(/^[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
+    var varValue = line.match(/=\s*(.*)$/);
+    var varType = findVar(varName).type;
+    varValue = evaluateExpression(varValue[1], varType);
+    varValue = removeSpacesAndParseType(varValue, varType);
+    updateVarVal(varName, varValue);
+    var newVar = findVar(varName);
+    document.getElementById('noodleOutputBox').value += newVar.name;
+    document.getElementById('noodleOutputBox').value += newVar.value;
+}
+
+function getDefaultValue(varType) {
+    switch (varType) {
+        case "int" : return 0; break;
+        case "float" : return 0.0; break;
+        case "string" : return ""; break;
+        case "char" : return 'a'; break;
+    }
+}
+
 var operatorList = ["+", "-", "*", "/"];
 
 function isOperator(char) {
@@ -31,7 +110,6 @@ function getLiteralExpList(expList) {
             litExpList.push(expList[i]);
 
         } else {
-
             litExpList.push(getVarVal(expList[i]));
         }
     }
@@ -40,7 +118,14 @@ function getLiteralExpList(expList) {
 
 function getVarVal(v) {
     var varEntry = findVar(v);
-    return varEntry.value;
+    var val = varEntry.value;
+    if (varEntry.type == "string") {
+        val = "\""+ val + "\"";
+    }
+    else if (varEntry.type == "char") {
+        val = "\'" + val + "\'";
+    }
+    return val;
 }
 
 var operatorPrecedences = {
@@ -50,11 +135,17 @@ var operatorPrecedences = {
     "/": 3
 };
 
-
+function removeSpaces(expList) {
+    for (var i = 0; i < expList.length; i++) {
+        expList[i] = expList[i].trim();
+    }
+    return expList;
+}
 
 function evaluateExpression(exp, type) {
     var expList = exp.split(/(\+|-|\*|\/|\(|\))/g);
     expList = removeBlankEntries(expList);
+    expList = removeSpaces(expList);
     var literalExpList = getLiteralExpList(expList);
     var i = 0;
     var operandStack = [];
@@ -92,8 +183,14 @@ function evaluateExpression(exp, type) {
         var op2 = operandStack.pop();
         operandStack.push(evaluateSingleExpression(op, op1, op2, type));
     }
-
-    return operandStack.pop();
+    result = operandStack.pop();
+    if (type == "string") {
+        result = result.replace(/\"/g, '');
+    }
+    else if (type == "char") {
+        result = result.replace(/\'/g, '');
+    }
+    return result;
 }
 
 function evaluateSingleExpression(op, op1, op2, type) {
@@ -119,9 +216,11 @@ function evaluateSingleExpression(op, op1, op2, type) {
                 return op1 * op2;
         }
     } else if (type == "string") {
+        op1 = op1.replace(/(\"|\')/g, '');
+        op2 = op2.replace(/(\"|\')/g, '');
         switch (op) {
             case "+":
-                return "\"".concat(op1.replace(/\"/g, '')).concat(op2.replace(/\"/g, '')).concat("\"");
+                return op2.concat(op1);
         }
     }
 
@@ -137,55 +236,13 @@ function findVar(varName) {
 }
 
 function removeSpacesAndParseType(varValue, varType) {
-    varValue = varValue.toString().replace(/\s/g, '');
+    //varValue = varValue.toString().replace(/\s/g, '');
     if (varType == "int") {
         return parseInt(varValue);
     } else if (varType == "float") {
         return parseFloat(varValue);
     } else {
         return varValue;
-    }
-}
-
-function decode(line) {
-    if (line.search("print ") == 0) {
-        var output = line.substr(6, line.length - 6).replace(/^\s+/, '');
-        if (isValid("printVar", line)) {
-            output = findVar(output).value;
-
-        }
-        else {
-            output = output.substr(1, output.length - 2);
-        }
-        document.getElementById('noodleOutputBox').value += output;
-    } else if (line.search(/int |float |string |char |bool/) == 0) {
-        var varType = line.match(/[^\s]+/)[0];
-        var varName = line.substr(varType.length + 1, line.length - varType.length + 1).match(/[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
-        var varValue = line.match(/=\s*(.*)$/);
-        if (varValue != null) {
-            varValue = evaluateExpression(varValue[1].toString().replace(/\s/g, ''), varType);
-            varValue = removeSpacesAndParseType(varValue, varType);
-        } else {
-            varValue = 0;
-        }
-        var newVar = new variable(varType, varName, varValue);
-        variables.push(newVar);
-        document.getElementById('noodleOutputBox').value += newVar.name;
-        document.getElementById('noodleOutputBox').value += newVar.value;
-    } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s.*$/) != null) {
-        var varName = line.match(/^[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
-        var varValue = line.match(/=\s*(.*)$/);
-        if (varValue != null) {
-            varValue = evaluateExpression(varValue[1].toString().replace(/\s/g, ''), "int");
-            varValue = parseInt(varValue.toString().replace(/\s/g, ''));
-        } else {
-            varValue = 0;
-        }
-        updateVarVal(varName, varValue);
-        var newInt = findVar(varName);
-        document.getElementById('noodleOutputBox').value += newInt.name;
-        document.getElementById('noodleOutputBox').value += newInt.value;
-
     }
 }
 

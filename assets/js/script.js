@@ -12,6 +12,26 @@ function setDimensions(editor) {
     document.getElementById("editorBorderDiv").style.height = height / 1.8 + 'px';
 }
 
+function fullScreen() {
+    if (document.getElementById("mainBody").style.paddingTop != '0px') {
+        $('#navbar').fadeOut('slow', function() {
+            $("#mainBody").css("padding-top", "0px");
+            $("#mainBody").css("top", "50%");
+            $("#mainBody").css("position", "absolute");
+            $("#mainBody").css("transform", "translate(0%, -50%)");
+            $("#fullScreen").attr("src","assets/images/smallScreen.png");
+        });
+    }
+    else {
+        $("#mainBody").css("padding-top", "105px");
+        $("#mainBody").css("top", "0%");
+        $("#mainBody").css("position", "static");
+        $("#mainBody").css("transform", "translate(0%, 0%)");
+        $('#navbar').fadeIn('slow');
+        $("#fullScreen").attr("src","assets/images/fullScreen.png");
+    }
+}
+
 function showBoxes() {
 
     //document.getElementById("welcome").style.visibility = 'collapse';

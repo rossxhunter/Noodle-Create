@@ -50,6 +50,7 @@ textarea {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    visibility: hidden;
 }
 
 ul {
@@ -80,8 +81,10 @@ li a {
 }
 
 .normalTab a:hover {
-    background-color: rgba(79, 205, 205, 1);
-    color: #ffffff;
+    border-bottom-style: solid;
+    border-bottom-color: #79cdcd;
+    border-bottom-width: thick;
+
 }
 
 #loginRegTabLink:hover span {
@@ -91,7 +94,7 @@ li a {
 
 #mainBody {
     padding: 20px;
-    padding-top: 100px;
+    padding-top: 105px;
     position: static;
     overflow-x: hidden;
     max-width: 100%;
@@ -206,7 +209,7 @@ li a {
 }
 
 #mainTableDiv {
-    visibility:hidden;
+    visibility:visible;
 }
 
 #startCodingButton {
@@ -245,7 +248,17 @@ li a {
     height: auto;
 }
 
+#fullScreen {
+    padding-top:20px;
+    width: 100%;
+    height: auto;
+}
+
 #run:hover {
+    opacity: 0.5;
+}
+
+#fullScreen:hover {
     opacity: 0.5;
 }
 

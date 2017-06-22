@@ -17,10 +17,10 @@
       $('#bodyDiv').fadeIn('slow');
 
       $('#startCodingButton').click(function() {
-        $('#welcome').fadeOut('slow', function() {
-          $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
+        //$('#welcome').fadeOut('slow', function() {
+          //$('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
           //$('#mainTableDiv').fadeIn('slow');
-        });
+        //});
 
       });
     });
@@ -68,6 +68,9 @@
               <div id="toolbarDiv" class="td-div">
                 <a href="#">
                   <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
+                </a>
+                <a href="#">
+                  <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
                 </a>
               </div>
             </div>
