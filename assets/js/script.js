@@ -3,14 +3,50 @@ function setDimensions(editor) {
         html = document.documentElement;
     var height = Math.max(body.scrollHeight, body.offsetHeight,
         html.clientHeight, html.scrollHeight, html.offsetHeight);
-    var numberOfLines = Math.round(height / 1.95 / editor.renderer.lineHeight);
+    var numberOfLines = Math.round(height / 1.7 / editor.renderer.lineHeight);
     editor.setOption("maxLines", numberOfLines);
     editor.setOption("minLines", numberOfLines);
-    document.getElementById("editorDiv").style.height = height / 1.9 + 'px';
-    document.getElementById("noodleOutputBoxContainer").style.height = height / 1.54 + 'px';
-    document.getElementById("outputBorderDiv").style.height = height / 1.54 + 'px';
-    document.getElementById("editorBorderDiv").style.height = height / 1.8 + 'px';
+    document.getElementById("editorDiv").style.height = height / 1.7 + 'px';
+    document.getElementById("editorBorderDiv").style.height = height / 1.6 + 'px';
+    document.getElementById("errorsBorderDiv").style.height = height / 8 + 'px';
+    var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
+    var errorsHeight = parseInt(document.getElementById("errorsBorderDiv").style.height);
+    document.getElementById("outputBorderDiv").style.height = editorHeight + errorsHeight + 14 + 'px';
 }
+
+// Get the modal
+//var modal = document.getElementById('myModal');
+
+// Get the button that opens the modal
+//var settings = document.getElementById("settings");
+
+// Get the <span> element that closes the modal
+//var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the button, open the modal
+function settings() {
+    document.getElementById('myModal').style.display = "block";
+}
+
+function done() {
+    document.getElementById('myModal').style.display = "none";
+}
+
+// When the user clicks on <span> (x), close the modal
+/*
+function close() {
+    window.alert("HI!");
+    document.getElementById('myModal').style.display = "none";
+}
+*/
+// When the user clicks anywhere outside of the modal, close it
+/*
+window.onclick = function(event) {
+    if (event.target == document.getElementById('myModal')) {
+        document.getElementById('myModal').style.display = "none";
+    }
+}
+*/
 
 function fullScreen() {
     if (document.getElementById("mainBody").style.paddingTop != '0px') {

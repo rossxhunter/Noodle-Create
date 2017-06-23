@@ -113,6 +113,9 @@ function checkPrintStr(line, lineNumber) {
                 return false;
             }
         }
+        else if (i < output.length - 1 && output.charAt(i) == '\\' && output.charAt(i+1)) {
+            i += 1;
+        }
         i += 1;
     }
     return true;

@@ -31,6 +31,7 @@ function decodePrint(line) {
         var i = 0;
         while (i < output.length) {
             if (output.charAt(i) == '$') {
+                window.alert("should not be here");
                 i += 1;
                 var varName = output.substr(i, output.length - i);
                 varName = varName.match(/^(.*?)\$/)[1];
@@ -42,9 +43,19 @@ function decodePrint(line) {
                 var re = new RegExp(escapeRegExp(replace),"g");
                 output = output.replace(re, varValue.toString());
             }
+            else if (i < output.length - 1 && output.charAt(i) == '\\') {
+                if (output.charAt(i+1) == 'n') {
+                    line1 = output.substr(0, i);
+                    line2 = output.substr(i+2, output.length - i - 2);
+                    output = line1 + '\n' + line2;
+                    window.alert(output);
+                }
+                i += 1;
+            }
             i += 1;
         }
     }
+    output = output.replace(/\\\\/g, '\\');
     document.getElementById('noodleOutputBox').value += output;
 }
 

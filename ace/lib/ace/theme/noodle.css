@@ -1,6 +1,6 @@
 .ace-noodle .ace_gutter {
   background: rgba(79, 205, 205, 0);
-  color: #ffffff
+  color: #444444
 }
 
 .ace-noodle .ace_print-margin {
@@ -10,15 +10,15 @@
 
 .ace-noodle {
   background-color: rgba(79, 205, 205, 0);
-  color: #ffffff
+  color: #444444
 }
 
 .ace-noodle .ace_cursor {
-  color: #ffffff
+  color: #bbbbbb
 }
 
 .ace-noodle .ace_marker-layer .ace_selection {
-  background: rgba(221, 240, 255, 0.20);
+  background: rgba(40, 40, 40, 0.20);
 }
 
 .ace-noodle.ace_multiselect .ace_selection.ace_start {

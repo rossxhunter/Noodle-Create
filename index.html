@@ -44,9 +44,25 @@
     <div id="mainBody">
       <div id="welcome">
         <br />Begin your coding journey with Noodle.<br /><br /> If you don't have an account yet, you can have a play by clicking below. <br /><br /><br /><br />
-        <a href="#">
-              <span onclick="showBoxes()" id="startCodingButton">Start Coding</span>
-          </a>
+        <span onclick="showBoxes()" id="startCodingButton">Start Coding</span>
+      </div>
+      <!-- The Modal -->
+      <div id="myModal" class="modal">
+
+        <!-- Modal content -->
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Settings</h2>
+          </div>
+          <div class="modal-body">
+            <p>Theme</p>
+            <p>Font size</p>
+          </div>
+          <div onclick="done()" class="modal-footer">
+            <h3>Done</h3>
+          </div>
+        </div>
+
       </div>
       <div id="mainTableDiv">
         <div class="table-div" style="width:100%">
@@ -54,7 +70,6 @@
             <div class="tr-div">
               <div id="editorContainer" class="td-div">
                 <div id="editorBorderDiv">
-                  <img id="editorBorder" src="assets/images/roundBox.png" />
                 </div>
                 <div id="editorDiv">
                   <pre id="editor"></pre>
@@ -66,18 +81,14 @@
                 </div>
               </div>
               <div id="toolbarDiv" class="td-div">
-                <a href="#">
-                  <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
-                </a>
-                <a href="#">
-                  <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
-                </a>
+                <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
+                <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
+                <img onclick="settings()" id="settings" src="assets/images/settings.png" />
               </div>
             </div>
             <div class="tr-div">
               <div class="td-div" id="noodleErrorsBoxContainer">
                 <div id="errorsBorderDiv">
-                  <img id="errorsBorder" src="assets/images/roundBoxLong.png" />
                 </div>
                 <div id="noodleErrorsBoxDiv">
                   <textarea id="noodleErrorsBox" readonly>Any errors will appear here</textarea>
@@ -89,7 +100,6 @@
             <div class="tr-div">
               <div class="td-div" id="noodleOutputBoxContainer">
                 <div id="outputBorderDiv">
-                  <img id="outputBorder" src="assets/images/roundBox.png" />
                 </div>
                 <div id="noodleOutputBoxDiv">
                   <textarea id="noodleOutputBox" readonly>Output appears here</textarea>
