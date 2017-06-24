@@ -17,7 +17,9 @@
       $('#bodyDiv').fadeIn('slow');
 
       $('#startCodingButton').click(function() {
+
         $('#welcome').fadeOut('slow', function() {
+            setupEditor();
           $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
           //$('#mainTableDiv').fadeIn('slow');
         });
@@ -76,22 +78,25 @@
                   <script src="ace/demo/kitchen-sink/require.js"></script>
                   <script src="assets/js/setupEditor.js"></script>
                   <script>
+                  if (document.getElementById("mainTableDiv").style.visibility == 'visible') {
                     setupEditor();
+                }
                   </script>
                 </div>
               </div>
               <div id="toolbarDiv" class="td-div">
                 <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
-                <img id="fullScreen" src="assets/images/fullScreen.png" />
+                <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
                 <img onclick="settings()" id="settings" src="assets/images/settings.png" />
               </div>
             </div>
             <div class="tr-div">
               <div class="td-div" id="noodleErrorsBoxContainer">
                 <div id="errorsBorderDiv">
-                </div>
-                <div id="noodleErrorsBoxDiv">
-                  <textarea id="noodleErrorsBox" readonly>Any errors will appear here</textarea>
+                  <div id="errorsText">
+                    ERRORS
+                  </div>
+                  <textarea id="noodleErrorsBox" readonly>sdbfgibsdijgnjkdf gijdfn gkj dfkjg kdf gk kg kdfj gkjdf gkjdf gdfj kngkjdfn gkjdf ngkjn dfjkgnjkf</textarea>
                 </div>
               </div>
             </div>
@@ -100,9 +105,10 @@
             <div class="tr-div">
               <div class="td-div" id="noodleOutputBoxContainer">
                 <div id="outputBorderDiv">
-                </div>
-                <div id="noodleOutputBoxDiv">
-                  <textarea id="noodleOutputBox" readonly>Output appears here</textarea>
+                  <div id="outputText">
+                    OUTPUT
+                  </div>
+                  <textarea id="noodleOutputBox" readonly></textarea>
                 </div>
               </div>
             </div>

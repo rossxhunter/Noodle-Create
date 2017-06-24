@@ -31,7 +31,6 @@ function decodePrint(line) {
         var i = 0;
         while (i < output.length) {
             if (output.charAt(i) == '$') {
-                window.alert("should not be here");
                 i += 1;
                 var varName = output.substr(i, output.length - i);
                 varName = varName.match(/^(.*?)\$/)[1];
@@ -48,7 +47,6 @@ function decodePrint(line) {
                     line1 = output.substr(0, i);
                     line2 = output.substr(i+2, output.length - i - 2);
                     output = line1 + '\n' + line2;
-                    window.alert(output);
                 }
                 i += 1;
             }
