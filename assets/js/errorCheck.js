@@ -53,6 +53,7 @@ function checkLine(line, lineNumber) {
     }
     if (!isCorrect) {
         currentMarker = editor.session.addMarker(new Range(lineNumber - 1, 0, lineNumber - 1, 1), "syntaxError", "fullLine");
+        $("#errorIndicator").attr("src","assets/images/cross.png");
     }
     return isCorrect;
 }
@@ -113,7 +114,11 @@ function checkPrintStr(line, lineNumber) {
                 return false;
             }
         }
-        else if (i < output.length - 1 && output.charAt(i) == '\\' && output.charAt(i+1)) {
+        else if (output.charAt(i) == '\\') {
+            if (i >= output.length - 1) {
+                addError("Invalid escape character on line " + lineNumber);
+                return false;
+            }
             i += 1;
         }
         i += 1;
@@ -131,7 +136,7 @@ function checkVarDec(line, lineNumber) {
         var varName = lineWithoutType.match(/^\s*[a-zA-Z_][a-zA-Z0-9_]*[^=\s]*/)[0].replace(/\s/g, '');
         if (!isDefaultValueDeclaring(line)) {
             var varValue = lineWithoutType.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
-            if (!checkVariableAssignment(varType, varName, varValue, true)) {
+            if (!checkVariableAssignment(varType, varName, varValue, true, lineNumber)) {
                 addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                 return false;
             }
@@ -150,8 +155,12 @@ function checkVarDec(line, lineNumber) {
 function checkVarAss(line, lineNumber) {
     var varName = line.match(/^[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
     var varValue = line.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
+    if (findUnVar(varName) == null) {
+        addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
+        return false;
+    }
     var varType = findUnVar(varName).type;
-    if (!checkVariableAssignment(varType, varName, varValue, false)) {
+    if (!checkVariableAssignment(varType, varName, varValue, false, lineNumber)) {
         addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
         return false;
     }
@@ -209,7 +218,18 @@ function checkBrackets(exp, type) {
     return false;
 }
 
-function checkVariableAssignment(varType, varName, varValue, isDeclaring) {
+function getLiteralExpListWithoutOperatorsAndVars(expList) {
+    var litExpList = [];
+    for (var i = 0; i < expList.length; i++) {
+        if (isOperand(expList[i])) {
+            litExpList.push(expList[i]);
+
+        }
+    }
+    return litExpList;
+}
+
+function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNumber) {
     var varEntry = findUnVar(varName);
     if (varEntry == null && !isDeclaring) {
         return false;
@@ -217,17 +237,17 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring) {
     if (varEntry != null && isDeclaring) {
         return false;
     }
+    var expList = varValue.toString().split(/\+|-|\*|\/|\(|\)/);
+    expList = removeBlankEntries(expList);
+    litList = getLiteralExpListWithoutOperatorsAndVars(expList);
+    var varList = getVarsFromExp(expList);
+    if (!allDeclared(varList)) {
+        return false;
+    }
     if (varEntry == null && isDeclaring) {
         var newVar = new uninitialisedVariable(varType, varName);
         uninitialisedVariables.push(newVar);
         varEntry = newVar;
-    }
-
-    var expList = varValue.toString().split(/\+|-|\*|\/|\(|\)/);
-    expList = removeBlankEntries(expList);
-    var varList = getVarsFromExp(expList);
-    if (!allDeclared(varList)) {
-        return false;
     }
     var typeList = getTypeOfVarsAndLits(expList);
     for (var i = 0; i < typeList.length; i++) {
@@ -251,7 +271,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring) {
             if (varEntry.type != "char" && varEntry.type != "string") {
                 return false;
             }
-            if (expList[i].match(/('.'|[a-zA-Z_][a-zA-Z0-9_]*)/) == null) {
+            if (expList[i].match(/^('(.|\\n)'|[a-zA-Z_][a-zA-Z0-9_]*)$/) == null) {
                 return false;
             }
         } else {
@@ -260,6 +280,30 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring) {
         }
     }
 
+    if (varEntry.type == "string") {
+        for (var i = 0;i < litList.length; i++) {
+            if (!checkEscape(litList[i])) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+function checkEscape(str, lineNumber) {
+    var i = 0;
+    str = str.substr(1, str.length-2);
+    while (i < str.length) {
+        if (str.charAt(i) == '\\') {
+            if (i >= str.length - 1) {
+                addError("Invalid escape character on line " + lineNumber);
+                return false;
+            }
+            i += 1;
+        }
+        i += 1;
+    }
     return true;
 }
 

@@ -6,6 +6,7 @@ function setDimensions(editor) {
     var editorContainer = document.getElementById("editorContainer").style.height;
     document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.67 + 'px';
     document.getElementById("editorContainer").style.height = (height - 102) * 0.67 + 'px';
+    document.getElementById("toolbarDiv").style.height = (height - 102) * 0.64 + 'px';
     var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
     var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight);
     editor.setOption("maxLines", numberOfLines);
@@ -92,7 +93,8 @@ function noodle(code) {
     if (isCorrect) {
         document.getElementById('noodleOutputBox').value = "";
         var Range = ace.require('ace/range').Range;
-        currentMarker = editor.session.addMarker(new Range(0, 0, arrayOfLines.length - 1, 1), "correctSyntax", "fullLine");
+        //currentMarker = editor.session.addMarker(new Range(0, 0, arrayOfLines.length - 1, 1), "correctSyntax", "fullLine");
+        $("#errorIndicator").attr("src","assets/images/tick.png");
         for (var i = 0; i < arrayOfLines.length; i++) {
             decode(arrayOfLines[i].replace(/^\s+/, ''));
         }

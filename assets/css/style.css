@@ -296,6 +296,8 @@ li a {
     width:3%;
     padding-left: 3%;
     padding-top:20px;
+    height: 100%;
+    position: relative;
 }
 
 #run {
@@ -313,6 +315,15 @@ li a {
     padding-top:20px;
     width: 100%;
     height: auto;
+}
+
+#errorIndicator {
+
+    bottom: 0;
+    position: absolute;
+    width: 60%;
+    height: auto;
+    float: left;
 }
 
 #run:hover {

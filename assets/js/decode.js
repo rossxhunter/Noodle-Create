@@ -15,7 +15,7 @@ function decode(line) {
         decodePrint(line);
     } else if (line.search(/int |float |string |char |bool/) == 0) {
         decodeVarDec(line);
-    } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s.*$/) != null) {
+    } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s*.*$/) != null) {
         decodeVarAss(line);
     }
 }
@@ -44,9 +44,14 @@ function decodePrint(line) {
             }
             else if (i < output.length - 1 && output.charAt(i) == '\\') {
                 if (output.charAt(i+1) == 'n') {
-                    line1 = output.substr(0, i);
-                    line2 = output.substr(i+2, output.length - i - 2);
+                    var line1 = output.substr(0, i);
+                    var line2 = output.substr(i+2, output.length - i - 2);
                     output = line1 + '\n' + line2;
+                }
+                else if (output.charAt(i+1) == '$') {
+                    var part1 = output.substr(0, i);
+                    var part2 = output.substr(i+1, output.length - i - 1);
+                    output = part1 + part2;
                 }
                 i += 1;
             }
@@ -91,6 +96,7 @@ function getDefaultValue(varType) {
         case "float" : return 0.0; break;
         case "string" : return ""; break;
         case "char" : return 'a'; break;
+        case "bool" : return 'false'; break;
     }
 }
 
@@ -106,7 +112,7 @@ function isOperator(char) {
 }
 
 function isOperand(char) {
-    if (char.toString().match(/^([0-9]+(\.[0-9]+)?|".*"|'.*'|true|false)$/) != null) {
+    if (char.toString().match(/^([0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false)$/) != null) {
         return true;
     }
     return false;
@@ -195,9 +201,13 @@ function evaluateExpression(exp, type) {
     result = operandStack.pop();
     if (type == "string") {
         result = result.replace(/\"/g, '');
+        result = replaceEscapes(result);
     }
     else if (type == "char") {
         result = result.replace(/\'/g, '');
+        if (result == "\\n") {
+            result = '\n';
+        }
     }
     return result;
 }
@@ -233,6 +243,23 @@ function evaluateSingleExpression(op, op1, op2, type) {
         }
     }
 
+}
+
+function replaceEscapes(str) {
+    var i = 0;
+    while (i < str.length) {
+        if (i < str.length - 1 && str.charAt(i) == '\\') {
+            if (str.charAt(i+1) == 'n') {
+                var line1 = str.substr(0, i);
+                var line2 = str.substr(i+2, str.length - i - 2);
+                str = line1 + '\n' + line2;
+            }
+            i += 1;
+        }
+        i += 1;
+    }
+    str = str.replace(/\\\\/g, '\\');
+    return str;
 }
 
 function findVar(varName) {
