@@ -134,6 +134,10 @@ function checkVarDec(line, lineNumber) {
     } else {
         var lineWithoutType = line.substr(varType.length + 1, line.length - varType.length + 1);
         var varName = lineWithoutType.match(/^\s*[a-zA-Z_][a-zA-Z0-9_]*[^=\s]*/)[0].replace(/\s/g, '');
+        if (isKeyword(varName)) {
+            addError("Invalid variable name on line " + lineNumber + ". " + varName + " is a keyword. It cannot be used for a variable name.");
+            return false;
+        }
         if (!isDefaultValueDeclaring(line)) {
             var varValue = lineWithoutType.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
             if (!checkVariableAssignment(varType, varName, varValue, true, lineNumber)) {
@@ -171,6 +175,17 @@ function checkVarAss(line, lineNumber) {
     return true;
 }
 
+var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end"];
+
+function isKeyword(name) {
+    for (var i = 0; i < keywordList.length; i++) {
+        if (name == keywordList[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function isValid(type, line) {
     switch (type) {
         case "print":
@@ -197,7 +212,7 @@ function checkBrackets(exp, type) {
     if ((exp.match(/\(/g) || []).length != (exp.match(/\)/g) || []).length) {
         return false;
     }
-    var usedOperators = exp.match(/\+|-|\/|\*/g);
+    var usedOperators = exp.match(/\+|-|\/|\*|&&|\|\|/g);
     if (type == "string" && usedOperators != null) {
         for (var i = 0; i < usedOperators.length; i++) {
             if (usedOperators[i] != "+") {
@@ -209,7 +224,7 @@ function checkBrackets(exp, type) {
     var oldExp = newExp;
     do {
         oldExp = newExp;
-        newExp = newExp.replace(/\(*@(\+|-|\*|\/)@\)*/g, '@');
+        newExp = newExp.replace(/\(*@(\+|-|\*|\/|&&|\|\|)@\)*/g, '@');
 
     } while (newExp != oldExp)
     if (newExp == "@") {
@@ -237,7 +252,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     if (varEntry != null && isDeclaring) {
         return false;
     }
-    var expList = varValue.toString().split(/\+|-|\*|\/|\(|\)/);
+    var expList = varValue.toString().split(/\+|-|\*|\/|\(|\)|&&|\|\|/);
     expList = removeBlankEntries(expList);
     litList = getLiteralExpListWithoutOperatorsAndVars(expList);
     var varList = getVarsFromExp(expList);

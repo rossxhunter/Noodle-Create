@@ -24,7 +24,6 @@ function decodePrint(line) {
     var output = line.substr(6, line.length - 6).replace(/^\s+/, '');
     if (isValid("printVar", line)) {
         output = findVar(output).value;
-
     }
     else {
         output = output.substr(1, output.length - 2);
@@ -58,6 +57,7 @@ function decodePrint(line) {
             i += 1;
         }
     }
+    output = output.toString();
     output = output.replace(/\\\\/g, '\\');
     document.getElementById('noodleOutputBox').value += output;
 }
@@ -100,7 +100,7 @@ function getDefaultValue(varType) {
     }
 }
 
-var operatorList = ["+", "-", "*", "/"];
+var operatorList = ["+", "-", "*", "/", "&&", "||"];
 
 function isOperator(char) {
     for (var i = 0; i < operatorList.length; i++) {
@@ -158,7 +158,7 @@ function removeSpaces(expList) {
 }
 
 function evaluateExpression(exp, type) {
-    var expList = exp.split(/(\+|-|\*|\/|\(|\))/g);
+    var expList = exp.split(/(\+|-|\*|\/|\(|\)|&&|\|\|)/g);
     expList = removeSpaces(expList);
     expList = removeBlankEntries(expList);
     var literalExpList = getLiteralExpList(expList);
@@ -240,6 +240,14 @@ function evaluateSingleExpression(op, op1, op2, type) {
         switch (op) {
             case "+":
                 return op2.concat(op1);
+        }
+    }
+    else if (type == "bool") {
+        op1 = (op1 == "true") || (op1 == true);
+        op2 = (op2 == "true") || (op2 == true);
+        switch (op) {
+            case "&&" : return op1 && op2;
+            case "||" : return op1 || op2;
         }
     }
 

@@ -42,6 +42,7 @@ function fullScreen() {
             editor.setOption("minLines", numberOfLines);
             document.getElementById("editorBorderDiv").style.height = height / 1.26 + 'px';
             document.getElementById("editorContainer").style.height = height / 1.26 + 'px';
+            document.getElementById("toolbarDiv").style.height = height / 1.32 + 'px';
             document.getElementById("errorsBorderDiv").style.height = height * 0.2 + 3 + 'px';
             $("#noodleErrorsBoxContainer").css("height", "20%");
             //$("#mainBody").css("top", "50%");
@@ -55,9 +56,10 @@ function fullScreen() {
             $("#mainBody").css("padding-top", "32px");
             $("#outputBorderDiv").css("height", "100%");
             $("#editorBorderDiv").css("height", "100%");
-            $("#editorDiv").css("height", "80%");
+            //$("#editorDiv").css("height", "80%");
             document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.8 + 'px';
             document.getElementById("editorContainer").style.height = (height - 102) * 0.8 + 'px';
+            document.getElementById("toolbarDiv").style.height = (height - 102) * 0.76 + 'px';
             var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
             var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight);
             editor.setOption("maxLines", numberOfLines);
