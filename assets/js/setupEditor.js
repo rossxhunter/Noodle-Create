@@ -14,7 +14,7 @@ function setupEditor() {
       editor.session.setOptions({
         mode: "ace/mode/noodle",
         tabSize: 2,
-        useSoftTabs: true
+        useSoftTabs: false
       });
       editor.session.insert({
         row: 1,

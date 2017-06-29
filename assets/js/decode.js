@@ -10,13 +10,34 @@ function escapeRegExp(string){
     return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
 }
 
+var shouldSkip = false;
+
 function decode(line) {
-    if (line.search("print ") == 0) {
-        decodePrint(line);
-    } else if (line.search(/int |float |string |char |bool/) == 0) {
-        decodeVarDec(line);
-    } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s*.*$/) != null) {
-        decodeVarAss(line);
+    if (!shouldSkip) {
+        if (line.search("print ") == 0) {
+            decodePrint(line);
+        } else if (line.search(/int |float |string |char |bool/) == 0) {
+            decodeVarDec(line);
+        } else if (line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s*.*$/) != null) {
+            decodeVarAss(line);
+        }
+        else if (line.search("if ") == 0) {
+            shouldSkip = !decodeIf(line);
+        }
+        else if (line.search("else if ") == 0) {
+            shouldSkip = true;
+        }else if (line.search("else") == 0) {
+            shouldSkip = true;
+        }
+    }
+    else if (line.trim().match(/^end$/) != null) {
+        shouldSkip = false;
+    }
+    else if (line.search("else if ") == 0) {
+        shouldSkip = !decodeIf(line);
+    }
+    else if (line.trim().match(/^else$/) != null) {
+        shouldSkip = false;
     }
 }
 
@@ -90,6 +111,13 @@ function decodeVarAss(line) {
     document.getElementById('noodleOutputBox').value += newVar.value;
 }
 
+function decodeIf(line) {
+    var pred = line.substr(line.indexOf("("));
+    var evaluatedPred = evaluateExpression(pred, "bool");
+    document.getElementById('noodleOutputBox').value += evaluatedPred;
+    return evaluatedPred;
+}
+
 function getDefaultValue(varType) {
     switch (varType) {
         case "int" : return 0; break;
@@ -100,7 +128,7 @@ function getDefaultValue(varType) {
     }
 }
 
-var operatorList = ["+", "-", "*", "/", "&&", "||"];
+var operatorList = ["+", "-", "*", "/", "&&", "||", "==", "<=", ">=", "!=", "<", ">"];
 
 function isOperator(char) {
     for (var i = 0; i < operatorList.length; i++) {
@@ -144,10 +172,18 @@ function getVarVal(v) {
 }
 
 var operatorPrecedences = {
-    "-": 0,
-    "+": 1,
-    "*": 2,
-    "/": 3
+    "||": 0,
+    "&&": 1,
+    "==": 2,
+    "!=": 2,
+    "<=": 2,
+    ">=": 2,
+    "<": 2,
+    ">": 2,
+    "-": 3,
+    "+": 3,
+    "*": 4,
+    "/": 4,
 };
 
 function removeSpaces(expList) {
@@ -158,7 +194,7 @@ function removeSpaces(expList) {
 }
 
 function evaluateExpression(exp, type) {
-    var expList = exp.split(/(\+|-|\*|\/|\(|\)|&&|\|\|)/g);
+    var expList = exp.split(/(\+|-|\*|\/|\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
     expList = removeSpaces(expList);
     expList = removeBlankEntries(expList);
     var literalExpList = getLiteralExpList(expList);
@@ -176,7 +212,17 @@ function evaluateExpression(exp, type) {
                 var op = operatorStack.pop();
                 var op1 = operandStack.pop();
                 var op2 = operandStack.pop();
-                operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                window.alert(op1+", "+op2);
+                if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
+                    operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
+                }
+                else if (type == "bool" && op != "&&" && op != "||") {
+                    var expType = getTypeOfVarsAndLits([op1])[0];
+                    operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
+                }
+                else {
+                    operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                }
             }
             operatorStack.push(literalExpList[i]);
         } else if (literalExpList[i] == ")") {
@@ -184,7 +230,18 @@ function evaluateExpression(exp, type) {
                 op = operatorStack.pop();
                 op1 = operandStack.pop();
                 op2 = operandStack.pop();
-                operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                window.alert(op1+", "+op2);
+                if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
+                    operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
+                }
+                else if (type == "bool" && op != "&&" && op != "||") {
+                    var expType = getTypeOfVarsAndLits([op1])[0];
+
+                    operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
+                }
+                else {
+                    operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                }
             }
             if (operatorStack[operatorStack.length - 1] == "(") {
                 operatorStack.pop();
@@ -196,7 +253,17 @@ function evaluateExpression(exp, type) {
         var op = operatorStack.pop();
         var op1 = operandStack.pop();
         var op2 = operandStack.pop();
-        operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+        window.alert(op1+", "+op2);
+        if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
+            operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
+        }
+        else if (type == "bool" && op != "&&" && op != "||") {
+            var expType = getTypeOfVarsAndLits([op1])[0];
+            operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
+        }
+        else {
+            operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+        }
     }
     result = operandStack.pop();
     if (type == "string") {
@@ -248,6 +315,16 @@ function evaluateSingleExpression(op, op1, op2, type) {
         switch (op) {
             case "&&" : return op1 && op2;
             case "||" : return op1 || op2;
+        }
+    }
+    else if (type == "pred") {
+        switch (op) {
+            case "==" : return op1 == op2;
+            case "!=" : return op1 != op2;
+            case "<=" : return op2 <= op1;
+            case ">=" : return op2 >= op1;
+            case "<" : return op2 < op1;
+            case ">" : return op2 > op1;
         }
     }
 

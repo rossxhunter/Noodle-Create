@@ -91,12 +91,14 @@ function noodle(code) {
     variables = [];
     uninitialisedVariables = [];
     var arrayOfLines = code.split(/\r?\n/);
-    var isCorrect = errorCheck(arrayOfLines);
+    var blockStack = []
+    var isCorrect = errorCheck(arrayOfLines, blockStack);
     if (isCorrect) {
         document.getElementById('noodleOutputBox').value = "";
         var Range = ace.require('ace/range').Range;
         //currentMarker = editor.session.addMarker(new Range(0, 0, arrayOfLines.length - 1, 1), "correctSyntax", "fullLine");
         $("#errorIndicator").attr("src","assets/images/tick.png");
+        shouldSkip = false;
         for (var i = 0; i < arrayOfLines.length; i++) {
             decode(arrayOfLines[i].replace(/^\s+/, ''));
         }
