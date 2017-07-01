@@ -4,25 +4,60 @@ function setDimensions(editor) {
     var height = Math.max(body.scrollHeight, body.offsetHeight,
         html.clientHeight, html.scrollHeight, html.offsetHeight);
     var editorContainer = document.getElementById("editorContainer").style.height;
-    document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.67 + 'px';
-    document.getElementById("editorContainer").style.height = (height - 102) * 0.67 + 'px';
+    document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.68 + 'px';
+    document.getElementById("editorContainer").style.height = (height - 102) * 0.68 + 'px';
     document.getElementById("toolbarDiv").style.height = (height - 102) * 0.64 + 'px';
     var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
     var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight);
     editor.setOption("maxLines", numberOfLines);
     editor.setOption("minLines", numberOfLines);
-    document.getElementById("errorsBorderDiv").style.height = (height - 102) * 0.17 + 2 + 'px';
+    document.getElementById("errorsBorderDiv").style.height = (height - 102) * 0.16 + 2 + 'px';
     var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
     var errorsHeight = parseInt(document.getElementById("errorsBorderDiv").style.height);
     document.getElementById("outputBorderDiv").style.height = editorHeight + errorsHeight + 1 + 'px';
 }
 
-function settings() {
+function settingsClick() {
     document.getElementById('myModal').style.display = "block";
 }
 
 function done() {
     document.getElementById('myModal').style.display = "none";
+    var theme = document.getElementById('themeSelect').value;
+    var fontSize = document.getElementById('fontSizeSelect').value;
+    setTheme(theme);
+    setFontSize(fontSize);
+}
+
+function setTheme(theme) {
+    if (theme == "noodle_light") {
+        editor.setTheme("ace/theme/noodle_light");
+        $('#editorBorderDiv').css('background-color', '#f5f5f5');
+        $('#outputBorderDiv').css('background-color', '#f5f5f5');
+        $('#errorsBorderDiv').css('background-color', '#f5f5f5');
+        $('#noodleOutputBox').css('color', '#444444');
+        $('#noodleErrorsBox').css('color', '#444444');
+        $('#outputBorderDiv').css('border-left-color', '#cccccc');
+        $('#errorsBorderDiv').css('border-top-color', '#cccccc');
+
+    } else if (theme == "noodle_dark") {
+        editor.setTheme("ace/theme/noodle_dark");
+        $('#editorBorderDiv').css('background-color', '#1D1F21');
+        $('#outputBorderDiv').css('background-color', '#1D1F21');
+        $('#errorsBorderDiv').css('background-color', '#1D1F21');
+        $('#mainTableDiv').css('background-color', '#1D1F21');
+        $('#noodleOutputBox').css('color', '#bbbbbb');
+        $('#noodleErrorsBox').css('color', '#bbbbbb');
+        $('#outputBorderDiv').css('border-left-color', '#333333');
+        $('#errorsBorderDiv').css('border-top-color', '#333333');
+    }
+}
+
+function setFontSize(fontSize) {
+    $('#editorDiv').css('font-size', fontSize + 'pt');
+    $('#editor').css('font-size', fontSize + 'pt');
+    $('#noodleOutputBox').css('font-size', fontSize + 'pt');
+    $('#noodleErrorsBox').css('font-size', fontSize + 'pt');
 }
 
 function fullScreen() {
@@ -40,23 +75,18 @@ function fullScreen() {
             var numberOfLines = Math.round(height / 1.26 / editor.renderer.lineHeight);
             editor.setOption("maxLines", numberOfLines);
             editor.setOption("minLines", numberOfLines);
-            document.getElementById("editorBorderDiv").style.height = height / 1.26 + 'px';
-            document.getElementById("editorContainer").style.height = height / 1.26 + 'px';
-            document.getElementById("toolbarDiv").style.height = height / 1.32 + 'px';
-            document.getElementById("errorsBorderDiv").style.height = height * 0.2 + 3 + 'px';
+            document.getElementById("editorBorderDiv").style.height = height * 0.8 + 'px';
+            document.getElementById("editorContainer").style.height = height * 0.8 + 'px';
+            document.getElementById("toolbarDiv").style.height = height * 0.76 + 'px';
+            document.getElementById("errorsBorderDiv").style.height = height * 0.2 - 2 + 'px';
             $("#noodleErrorsBoxContainer").css("height", "20%");
-            //$("#mainBody").css("top", "50%");
-            //$("#mainBody").css("position", "absolute");
-            //$("#mainBody").css("transform", "translate(0%, 0%)");
-            $("#fullScreen").attr("src","assets/images/smallScreen.png");
+            $("#fullScreen").attr("src", "assets/images/smallScreen.png");
         });
-    }
-    else {
+    } else {
         $('#navbar').fadeIn('slow', function() {
             $("#mainBody").css("padding-top", "32px");
             $("#outputBorderDiv").css("height", "100%");
             $("#editorBorderDiv").css("height", "100%");
-            //$("#editorDiv").css("height", "80%");
             document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.8 + 'px';
             document.getElementById("editorContainer").style.height = (height - 102) * 0.8 + 'px';
             document.getElementById("toolbarDiv").style.height = (height - 102) * 0.76 + 'px';
@@ -64,25 +94,14 @@ function fullScreen() {
             var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight);
             editor.setOption("maxLines", numberOfLines);
             editor.setOption("minLines", numberOfLines);
-            document.getElementById("errorsBorderDiv").style.height = (height - 102) * 0.2 - 1 + 'px';
+            document.getElementById("errorsBorderDiv").style.height = (height - 102) * 0.2 + 'px';
             $("#noodleErrorsBoxContainer").css("height", "100%");
             var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
             var errorsHeight = parseInt(document.getElementById("errorsBorderDiv").style.height);
-            document.getElementById("outputBorderDiv").style.height = editorHeight + errorsHeight + 2 + 'px';
-            //$("#mainBody").css("top", "0%");
-            //$("#mainBody").css("position", "static");
-            //$("#mainBody").css("transform", "translate(0%, 0%)");
-            $("#fullScreen").attr("src","assets/images/fullScreen.png");
+            document.getElementById("outputBorderDiv").style.height = editorHeight + errorsHeight + 1 + 'px';
+            $("#fullScreen").attr("src", "assets/images/fullScreen.png");
         });
     }
-}
-
-function showBoxes() {
-
-    //document.getElementById("welcome").style.visibility = 'collapse';
-
-    //document.getElementById("mainTable").style.visibility = 'visible';
-    //$('#mainTable').css('visibility','visible').hide().fadeIn('slow');
 }
 
 var currentMarker;
@@ -96,11 +115,38 @@ function noodle(code) {
     if (isCorrect) {
         document.getElementById('noodleOutputBox').value = "";
         var Range = ace.require('ace/range').Range;
-        //currentMarker = editor.session.addMarker(new Range(0, 0, arrayOfLines.length - 1, 1), "correctSyntax", "fullLine");
-        $("#errorIndicator").attr("src","assets/images/tick.png");
+        $("#errorIndicator").attr("src", "assets/images/tick.png");
         shouldSkip = false;
-        for (var i = 0; i < arrayOfLines.length; i++) {
-            decode(arrayOfLines[i].replace(/^\s+/, ''));
+        satisfied = false;
+        shouldLoop = false;
+        shouldStopLoop = false;
+        codeBlockStack = [];
+        endStack = [];
+        finishStack = [];
+        loopsLeft = [];
+        execute(arrayOfLines, 0);
+    }
+}
+
+function execute(arrayOfLines, i) {
+    for (var j = i; j < arrayOfLines.length; j++) {
+        decode(arrayOfLines[j].replace(/^\s+/, ''));
+        if (endStack[endStack.length - 1] == true) {
+            return j;
+        }
+        if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length -1] == true) {
+            finishStack.pop();
+            finishStack.push(false);
+            var loops = loopsLeft.pop();
+            var l;
+            for (var k = 0; k < loops; k++) {
+                l = execute(arrayOfLines, j + 1);
+                endStack[endStack.length - 1] = false;
+            }
+            endStack.pop();
+            finishStack.pop();
+            codeBlockStack.pop();
+            j = l;
         }
     }
 }

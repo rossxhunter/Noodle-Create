@@ -24,35 +24,29 @@ function errorCheck(arrayOfLines, blockStack) {
     blockStack.push(new codeBlock("main", i));
     for (var j = i; j < arrayOfLines.length; j++) {
         if (arrayOfLines[j].replace(/^\s+/, '').search("if ") == 0) {
-            blockStack.push(new codeBlock("if", j+1));
-        }
-        else if (arrayOfLines[j].replace(/^\s+/, '').search(/else\s+if\s+/) == 0) {
+            blockStack.push(new codeBlock("if", j + 1));
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search(/else\s+if\s+/) == 0) {
             var precedingBlock = blockStack.pop();
             if (precedingBlock.type != "else if" && precedingBlock.type != "if") {
                 var line = j + 1;
                 addError("Unexpected else if on line " + line);
                 return false;
             }
-            blockStack.push(new codeBlock("else if", j+1));
-        }
-        else if (arrayOfLines[j].replace(/^\s+/, '').search("else") == 0) {
+            blockStack.push(new codeBlock("else if", j + 1));
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search("else") == 0) {
             var precedingBlock = blockStack.pop();
-            window.alert(precedingBlock.type);
             if (precedingBlock.type != "else if" && precedingBlock.type != "if") {
                 var line = j + 1;
                 addError("Unexpected else on line " + line);
                 return false;
             }
-            blockStack.push(new codeBlock("else", j+1));
-        }
-        else if (arrayOfLines[j].replace(/^\s+/, '').search("for ") == 0) {
-            blockStack.push(new codeBlock("for", j+1));
-        }
-        else if (arrayOfLines[j].replace(/^\s+/, '').search("end") == 0) {
+            blockStack.push(new codeBlock("else", j + 1));
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search("for ") == 0) {
+            blockStack.push(new codeBlock("for", j + 1));
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search("end") == 0) {
             if (blockStack.length != 0) {
                 blockStack.pop();
-            }
-            else {
+            } else {
                 var line = j + 1;
                 addError("Unexpected end statment on line " + j);
                 return false;
@@ -75,17 +69,13 @@ function unendedBlockError(blockStack) {
     for (var i = 0; i < blockStack.length; i++) {
         if (blockStack[i].type == "if") {
             addError("Unended if statment on line " + blockStack[i].line);
-        }
-        else if (blockStack[i].type == "else if") {
+        } else if (blockStack[i].type == "else if") {
             addError("Unended else if statment on line " + blockStack[i].line);
-        }
-        else if (blockStack[i].type == "else") {
+        } else if (blockStack[i].type == "else") {
             addError("Unended else statment on line " + blockStack[i].line);
-        }
-        else if (blockStack[i].type == "for") {
+        } else if (blockStack[i].type == "for") {
             addError("Unended if statment on line " + blockStack[i].line);
-        }
-        else if (blockStack[i].type == "main") {
+        } else if (blockStack[i].type == "main") {
             addError("Unended main function on line " + blockStack[i].line);
         }
     }
@@ -104,10 +94,11 @@ function checkLine(line, lineNumber) {
         isCorrect = checkVarDec(line, lineNumber);
     } else if (isValid("var", line)) {
         isCorrect = checkVarAss(line, lineNumber);
-    } else if (line.search(/(if\s|else\s+if\s)/) == 0) {
+    } else if (line.search(/(if\s*\(|else\s+if\s*\()/) == 0) {
         isCorrect = checkIf(line, lineNumber);
-    } else if (line.replace(/\s/g, '').match(/^(end|else)$/) != null) {}
-    else {
+    } else if (line.search(/for\s*\(/) == 0) {
+        isCorrect = checkFor(line, lineNumber);
+    } else if (line.replace(/\s/g, '').match(/^(end|else)$/) != null) {} else {
         if (line.replace(/\s/g, '') != "" && line.match(/^\/\/.*$/) == null) {
             isCorrect = false;
             addError("Unrecognised statement on line " + lineNumber);
@@ -207,8 +198,7 @@ function checkVarDec(line, lineNumber) {
                 if (!checkPredicate(varName, varValue, lineNumber, true, false)) {
                     return false;
                 }
-            }
-            else {
+            } else {
                 if (!checkVariableAssignment(varType, varName, varValue, true, lineNumber)) {
                     addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                     return false;
@@ -238,8 +228,7 @@ function checkVarAss(line, lineNumber) {
         if (!checkPredicate(varName, varValue, lineNumber, false, false)) {
             return false;
         }
-    }
-    else {
+    } else {
         if (!checkVariableAssignment(varType, varName, varValue, false, lineNumber)) {
             addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
             return false;
@@ -261,6 +250,14 @@ function checkIf(line, lineNumber) {
     pred = pred.replace(/\s/g, '');
     if (!checkPredicate("", pred, lineNumber, true)) {
         addError("Invalid if statment on line " + lineNumber);
+        return false;
+    }
+    return true;
+}
+
+function checkFor(line, lineNumber) {
+    if (!isValid("for", line)) {
+        addError("Invalid for statment on line " + lineNumber);
         return false;
     }
     return true;
@@ -289,9 +286,11 @@ function isValid(type, line) {
             return line.match(/^[a-zA-Z][a-zA-Z0-9_]*\s*=\s*.*$/) != null;
             break;
         case "if":
-            return line.match(/^(if|else\s+if|else)\s+\(.+\)\s*$/) != null;
+            return line.match(/^(if|else\s+if|else)\s*\(.+\)\s*$/) != null;
             break;
-
+        case "for":
+            return line.match(/^for\s*\(+\s*[0-9]+\s*\)+\s*$/) != null;
+            break;
     }
 }
 
@@ -301,6 +300,38 @@ function isCorrectFormat(line) {
 
 function isDefaultValueDeclaring(line) {
     return (line.match(/^(int|float|string|char|bool)\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null);
+}
+
+var equalityList = ["=", ">", "<"];
+
+function isEquality(char) {
+    for (var i = 0; i < equalityList.length; i++) {
+        if (char == equalityList[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function removeMinusSigns(exp) {
+    var i = 0;
+    while (i < exp.length) {
+        if (exp[i] == '-') {
+            if (i != 0 && (isOperator(exp[i - 1]) || exp[i - 1] == "(") || isEquality(exp[i - 1])) {
+                var part1 = exp.substr(0, i);
+                var part2 = exp.substr(i + 1, exp.length - i - 1);
+                exp = part1 + part2;
+                i -= 1;
+            } else if (i == 0) {
+                var part1 = exp.substr(0, i);
+                var part2 = exp.substr(i + 1, exp.length - i - 1);
+                exp = part1 + part2;
+                i -= 1;
+            }
+        }
+        i += 1;
+    }
+    return exp;
 }
 
 function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
@@ -313,20 +344,21 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
             return false;
         }
     }
-    var predList = pred.toString().split(/\(|\)|&&|\|\||==|<=|>=|!=|<|>/);
+    var predList = pred.toString().split(/(\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
     predList = removeBlankEntries(predList);
-    var expList = pred.toString().split(/\(|\)|\+|-|\/|\*|&&|\|\||==|!=|<=|>=|<|>/);
+    var expList = pred.toString().split(/(\(|\)|\+|-|\/|\*|&&|\|\||==|!=|<=|>=|<|>)/g);
     expList = removeBlankEntries(expList);
+    expList = getNegativesAndSubraction(expList);
     var varList = getVarsFromExp(expList);
     if (!allDeclared(varList)) {
         addError("Undeclared variable(s) on line " + lineNumber);
         return false;
     }
     if (isIf && varEntry == null && isDeclaring) {
-            var newVar = new uninitialisedVariable("bool", varName);
-            uninitialisedVariables.push(newVar);
-            varEntry = newVar;
-        }
+        var newVar = new uninitialisedVariable("bool", varName);
+        uninitialisedVariables.push(newVar);
+        varEntry = newVar;
+    }
     if ((pred.match(/\(/g) || []).length != (pred.match(/\)/g) || []).length) {
         return false;
     }
@@ -334,19 +366,30 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
 
 
     var newExp = pred.replace(/\(*(true|false)\)*/g, '{');
-    newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*/g , '@v');
-    newExp = newExp.replace(/{/g , '@b');
+    newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*/g, '@v');
+    newExp = newExp.replace(/{/g, '@b');
     newExp = newExp.replace(/\(*'('.*'.*)*[^']*'\)*/g, '@c');
     newExp = newExp.replace(/\(*"(".*".*)*[^"]*"\)*/g, '@s');
     newExp = newExp.replace(/\(*[0-9]+(\.[0-9]+)\)*/g, '@f');
     newExp = newExp.replace(/\(*[0-9]+\)*/g, '@i');
+    newExp = removeMinusSigns(newExp);
     for (var i = 0; i < varTypes.length; i++) {
         switch (varTypes[i]) {
-            case "int" : newExp = newExp.replace(/\@v/, '@i'); break;
-            case "float" : newExp = newExp.replace(/\@v/, '@f'); break;
-            case "bool" : newExp = newExp.replace(/\@v/, '@b'); break;
-            case "char" : newExp = newExp.replace(/\@v/, '@c'); break;
-            case "string" : newExp = newExp.replace(/\@v/, '@s'); break;
+            case "int":
+                newExp = newExp.replace(/\@v/, '@i');
+                break;
+            case "float":
+                newExp = newExp.replace(/\@v/, '@f');
+                break;
+            case "bool":
+                newExp = newExp.replace(/\@v/, '@b');
+                break;
+            case "char":
+                newExp = newExp.replace(/\@v/, '@c');
+                break;
+            case "string":
+                newExp = newExp.replace(/\@v/, '@s');
+                break;
         }
     }
 
@@ -403,25 +446,52 @@ function checkSinglePredicate(singlePredList, lineNumber) {
 
 function getTypeFromAtSymbol(atSym) {
     switch (atSym) {
-        case "@s" : return "string"; break;
-        case "@i" : return "int"; break;
-        case "@f" : return "float"; break;
-        case "@c" : return "char"; break;
-        case "@b" : return "bool"; break;
+        case "@s":
+            return "string";
+            break;
+        case "@i":
+            return "int";
+            break;
+        case "@f":
+            return "float";
+            break;
+        case "@c":
+            return "char";
+            break;
+        case "@b":
+            return "bool";
+            break;
     }
+}
+
+function replaceNegativesAndConcat(expList) {
+    for (var i = 0; i < expList.length; i++) {
+        if (expList[i].match(/-.+/)) {
+            expList[i] = '@';
+        }
+    }
+    return expList.join('');
 }
 
 function checkBrackets(exp, type) {
     if ((exp.match(/\(/g) || []).length != (exp.match(/\)/g) || []).length) {
         return false;
     }
-    var usedOperators = exp.match(/\+|-|\/|\*|&&|\|\||==|!=|<=|>=|<|>/g);
+    var usedOperators = exp.match(/\+|\/|\*|&&|\|\||==|!=|<=|>=|<|>/g);
+    if (usedOperators != null) {
+        usedOperators = getNegativesAndSubraction(usedOperators);
+    }
     if (usedOperators != null) {
         if (!checkOperators(type, usedOperators)) {
             return false;
         }
     }
-    var newExp = exp.replace(/\(*([0-9]+(\.[0-9]+)?|"(".*".*)*[^"]*"|'('.*'.*)*[^']*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*)\)*/g, '@');
+    var expList = exp.split(/(\+|-|\*|\/|\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
+    expList = removeSpaces(expList);
+    expList = removeBlankEntries(expList);
+    expList = getNegativesAndSubraction(expList);
+    var newExp = replaceNegativesAndConcat(expList);
+    newExp = newExp.replace(/\(*([0-9]+(\.[0-9]+)?|"(".*".*)*[^"]*"|'('.*'.*)*[^']*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*)\)*/g, '@');
     var oldExp = newExp;
     do {
         oldExp = newExp;
@@ -481,6 +551,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     }
     var expList = varValue.toString().split(/\+|-|\*|\/|\(|\)|&&|\|\|/);
     expList = removeBlankEntries(expList);
+    expList = getNegativesAndSubraction(expList);
     litList = getLiteralExpListWithoutOperatorsAndVars(expList);
     var varList = getVarsFromExp(expList);
     if (!allDeclared(varList)) {
