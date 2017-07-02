@@ -6,7 +6,7 @@ function setupEditor() {
         }
     });
     // load ace and extensions
-    require(["ace/ace", "ace/ext/static_highlight"], function(ace) {
+    require(["ace/ace", "ace/ext/static_highlight", "ace/ext/language_tools"], function(ace) {
         var editor = ace.edit("editor");
         setEditor(editor);
         setAce(ace);
@@ -15,6 +15,11 @@ function setupEditor() {
             mode: "ace/mode/noodle",
             tabSize: 2,
             useSoftTabs: false,
+        });
+
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true
         });
         editor.session.insert({
             row: 1,

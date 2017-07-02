@@ -10,7 +10,7 @@ define(function(require, exports, module) {
         // regexps are ordered -> the first match is used
 
         var keywords = (
-            "func|if|else|end"
+            "func|if|else|end|for|print"
         );
 
         var typeList = (
@@ -36,7 +36,7 @@ define(function(require, exports, module) {
                 },
                 {
                     token: "string",
-                    regex: '"[^"]*' //
+                    regex: '".*"' //
                 },
                 {
                     token: "string",
