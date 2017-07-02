@@ -20,6 +20,7 @@ var stepperVar = [];
 var currentStepper = [];
 var target = [];
 var increment = [];
+var equalityStack = [];
 
 
 function decode(line) {
@@ -43,7 +44,7 @@ function decode(line) {
             codeBlockStack.pop();
             codeBlockStack.push("else");
         } else if (line.match(/for\s*\(/) != null) {
-            decodeBasicFor(line);
+            decodeFor(line);
             endStack.push(false);
             finishStack.push(true);
             codeBlockStack.push("for");
@@ -123,12 +124,14 @@ function decodeVarDec(line) {
     var varName = line.substr(varType.length + 1, line.length - varType.length + 1).match(/[a-zA-Z][a-zA-Z0-9_]*[^=\s]*/)[0];
     var varValue = line.match(/=\s*(.*)$/);
     if (varValue != null) {
-        varValue = evaluateExpression(varValue[1], varType);
+        varValue = varValue[0].match(/[^=\s*].*/)[0];
+        varValue = evaluateExpression(varValue, varType);
         varValue = removeSpacesAndParseType(varValue, varType);
     } else {
         varValue = getDefaultValue(varType);
     }
     var newVar = new variable(varType, varName, varValue);
+    removeOldVar(varName);
     variables.push(newVar);
     document.getElementById('noodleOutputBox').value += newVar.name;
     document.getElementById('noodleOutputBox').value += newVar.value;
@@ -153,9 +156,10 @@ function decodeIf(line) {
     return evaluatedPred;
 }
 
-function decodeBasicFor(line) {
+function decodeFor(line) {
     var loopCond = line.substr(line.indexOf("("));
     var loopParts = loopCond.split(/,/g);
+    loopParts = removeSpaces(loopParts);
     if (loopParts.length == 1) {
         currentStepper.push(0);
         target.push(evaluateExpression(loopParts[0], "int"));
@@ -163,26 +167,52 @@ function decodeBasicFor(line) {
         stepperVar.push("");
     } else if (loopParts.length == 2) {
         currentStepper.push(0);
-        target.push(evaluateExpression(loopParts[1].replace(/\)/, ''), "int"));
+        var end = loopParts[1].substr(0, loopParts[1].length - 1);
+        end = getTargetAndEquality(end);
+        end = evaluateExpression(end, "int");
+        target.push(end);
         increment.push(1);
-        stepperVar.push(loopParts[0]);
+        stepperVar.push(loopParts[0].replace(/\(/, ''));
+        variables.push(new variable("int", loopParts[0].substr(1, loopParts[0].length - 1), 0));
     } else if (loopParts.length == 3) {
-        stepperVar.push(loopParts[0]);
+        stepperVar.push(loopParts[0].replace(/\(/, ''));
         var start = evaluateExpression(loopParts[1], "int");
-        var end = evaluateExpression(loopParts[2].replace(/\)/, ''), "int");
+        var end = loopParts[2].substr(0, loopParts[2].length - 1);
+        end = getTargetAndEquality(end);
+        end = evaluateExpression(end, "int");
         currentStepper.push(start);
         target.push(end);
-        if (start <= end) {
+        if (parseInt(start) <= parseInt(end)) {
             increment.push(1);
         } else {
             increment.push(-1);
         }
+        variables.push(new variable("int", loopParts[0].substr(1, loopParts[0].length - 1), parseInt(start)));
     } else {
-        currentStepper.push(evaluateExpression(loopParts[1], "int"));
-        target.push(evaluateExpression(loopParts[2], "int"));
-        increment.push(evaluateExpression(loopParts[3].replace(/\)/, ''), "int"));
-        stepperVar.push(loopParts[0]);
+        var start = evaluateExpression(loopParts[1], "int");
+        currentStepper.push(start);
+        var end = loopParts[2];
+        end = getTargetAndEquality(end);
+        end = evaluateExpression(end, "int");
+        target.push(end);
+        var inc = evaluateExpression(loopParts[3].substr(0, loopParts[3].length - 1), "int");
+        increment.push(inc);
+        stepperVar.push(loopParts[0].replace(/\(/, ''));
+        variables.push(new variable("int", loopParts[0].substr(1, loopParts[0].length - 1), parseInt(start)));
     }
+}
+
+function getTargetAndEquality(end) {
+    if (end.charAt(0) == "<" || end.charAt(0) == ">" || end.charAt(0) == "!" || end.charAt(0) == "=") {
+        var eq = end.charAt(0);
+        end = end.substr(1, end.length-1);
+        if (end.charAt(0) == "=") {
+            eq = eq.concat(end.charAt(0));
+            end = end.substr(1, end.length-1);
+        }
+        equalityStack.push(eq);
+    }
+    return end;
 }
 
 function getDefaultValue(varType) {
@@ -202,6 +232,14 @@ function getDefaultValue(varType) {
         case "bool":
             return 'false';
             break;
+    }
+}
+
+function removeOldVar(varName) {
+    for (var i = 0; i < variables.length; i++) {
+        if (variables[i].name == varName) {
+            variables.splice(i, 1);
+        }
     }
 }
 
@@ -366,10 +404,10 @@ function evaluateExpression(exp, type) {
     }
     result = operandStack.pop();
     if (type == "string") {
-        result = result.replace(/\"/g, '');
+        result = result.substr(1, result.length-2);
         result = replaceEscapes(result);
     } else if (type == "char") {
-        result = result.replace(/\'/g, '');
+        result = result.substr(1, result.length-2);
         if (result == "\\n") {
             result = '\n';
         }

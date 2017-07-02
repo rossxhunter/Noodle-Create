@@ -114,7 +114,8 @@ function noodle(code) {
     variables = [];
     uninitialisedVariables = [];
     var arrayOfLines = code.split(/\r?\n/);
-    var blockStack = []
+    var blockStack = [];
+    currentLevel = 0;
     var isCorrect = errorCheck(arrayOfLines, blockStack);
     if (isCorrect) {
         document.getElementById('noodleOutputBox').value = "";
@@ -126,6 +127,7 @@ function noodle(code) {
         endStack = [];
         finishStack = [];
         loopsLeft = [];
+        stepperVar = [];
         execute(arrayOfLines, 0);
     }
 }
@@ -142,22 +144,28 @@ function execute(arrayOfLines, i) {
             var inc = parseInt(increment.pop());
             var start = parseInt(currentStepper.pop());
             var end = parseInt(target.pop());
-            var stepper = stepperVar[stepperVar.length - 1];
+            var stepper = stepperVar.pop();
             var l;
             var count = 0;
             var overflow = false;
-            var equality;
-            if (start <= end) {
-                equality = "<";
-            } else {
-                equality = ">";
+            var equality = equalityStack.pop();
+            if (equality == null) {
+                if (start <= end) {
+                    equality = "<";
+                } else {
+                    equality = ">";
+                }
             }
             while (equalityHolds(start, end, equality) && !overflow) {
                 l = execute(arrayOfLines, j + 1);
                 endStack[endStack.length - 1] = false;
-                start += inc;
+                if (stepper == "") {
+                    start += inc;
+                } else {
+                    start = updateStepper(stepper, inc);
+                }
                 count += 1;
-                if (count > 10000) {
+                if (count > 1000) {
                     overflow = true;
                 }
             }
@@ -175,13 +183,26 @@ function execute(arrayOfLines, i) {
     }
 }
 
+function updateStepper(stepper, inc) {
+    var stepV = findVar(stepper);
+    stepV.value += inc;
+    return stepV.value;
+}
+
 function equalityHolds(start, end, equality) {
     switch (equality) {
         case "<":
             return start < end;
         case ">":
             return start > end;
-
+        case "<=":
+            return start <= end;
+        case ">=":
+            return start >= end;
+        case "==":
+            return start == end;
+        case "!=":
+            return start != end;
     }
 }
 

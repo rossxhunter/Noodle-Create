@@ -1,6 +1,9 @@
-function uninitialisedVariable(type, name) {
+function uninitialisedVariable(type, name, startLine, level, endLine) {
     this.type = type;
     this.name = name;
+    this.startLine = startLine;
+    this.level = level;
+    this.endLine = endLine;
 }
 
 var uninitialisedVariables = [];
@@ -9,6 +12,8 @@ function codeBlock(type, line) {
     this.type = type;
     this.line = line;
 }
+
+var currentLevel = 0;
 
 function errorCheck(arrayOfLines, blockStack) {
     document.getElementById('noodleErrorsBox').value = "";
@@ -21,6 +26,7 @@ function errorCheck(arrayOfLines, blockStack) {
         return false;
     }
     i += 1;
+    currentLevel += 1;
     blockStack.push(new codeBlock("main", i));
     for (var j = i; j < arrayOfLines.length; j++) {
         if (arrayOfLines[j].replace(/^\s+/, '').search("if ") == 0) {
@@ -94,11 +100,18 @@ function checkLine(line, lineNumber) {
         isCorrect = checkVarDec(line, lineNumber);
     } else if (isValid("var", line)) {
         isCorrect = checkVarAss(line, lineNumber);
-    } else if (line.search(/(if\s*\(|else\s+if\s*\()/) == 0) {
+    } else if (line.search(/if\s*\(/) == 0) {
+        isCorrect = checkIf(line, lineNumber);
+    } else if (line.search(/else\s+if\s*\(/) == 0) {
+        updateVarScope(lineNumber, false);
         isCorrect = checkIf(line, lineNumber);
     } else if (line.search(/for\s*\(/) == 0) {
         isCorrect = checkFor(line, lineNumber);
-    } else if (line.replace(/\s/g, '').match(/^(end|else)$/) != null) {} else {
+    } else if (line.replace(/\s/g, '').match(/^end$/) != null) {
+        updateVarScope(lineNumber, true);
+    } else if (line.replace(/\s/g, '').match(/^else$/) != null) {
+        updateVarScope(lineNumber, false);
+    } else {
         if (line.replace(/\s/g, '') != "" && line.match(/^\/\/.*$/) == null) {
             isCorrect = false;
             addError("Unrecognised statement on line " + lineNumber);
@@ -113,6 +126,18 @@ function checkLine(line, lineNumber) {
         $("#errorIndicator").attr("src", "assets/images/cross.png");
     }
     return isCorrect;
+}
+
+function updateVarScope(lineNumber, isEnd) {
+    for (var i = 0; i < uninitialisedVariables.length; i++) {
+        if (uninitialisedVariables[i].level == currentLevel && uninitialisedVariables[i].endLine == 0) {
+            uninitialisedVariables[i].endLine = lineNumber - 1;
+            uninitialisedVariables.splice(i, 1);
+        }
+    }
+    if (isEnd) {
+        currentLevel -= 1;
+    }
 }
 
 function checkPrint(line, lineNumber) {
@@ -133,6 +158,10 @@ function checkPrintVar(line, lineNumber) {
     var varEntry = findUnVar(varName);
     if (varEntry == null) {
         addError("Undeclared variable on line " + lineNumber);
+        return false;
+    }
+    if (varEntry.endLine < lineNumber && varEntry.endLine != 0) {
+        addError("Variable out of scope on line " + lineNumber);
         return false;
     }
     return true;
@@ -158,6 +187,10 @@ function checkPrintStr(line, lineNumber) {
                     var varEntry = findUnVar(varName);
                     if (varEntry == null) {
                         addError("Undeclared variable on line " + lineNumber);
+                        return false;
+                    }
+                    if (varEntry.endLine < lineNumber && varEntry.endLine != 0) {
+                        addError("Variable out of scope on line " + lineNumber);
                         return false;
                     }
                 }
@@ -209,8 +242,10 @@ function checkVarDec(line, lineNumber) {
                 }
             }
         } else {
-            var newVar = new uninitialisedVariable(varType, varName);
-            uninitialisedVariables.push(newVar);
+            if (!checkVariableAssignment(varType, varName, "", true, lineNumber)) {
+                addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
+                return false;
+            }
         }
     }
     return true;
@@ -242,13 +277,16 @@ function checkVarAss(line, lineNumber) {
 }
 
 function checkIf(line, lineNumber) {
+    if (line.match(/if\s*\(/) != null) {
+        currentLevel += 1;
+    }
     if (!isValid("if", line)) {
         addError("Invalid if statement on line " + lineNumber);
         return false;
     }
     var pred = line.substr(line.indexOf("("));
     pred = pred.replace(/\s/g, '');
-    if (!checkPredicate("", pred, lineNumber, true)) {
+    if (!checkPredicate("", pred, lineNumber, false, true)) {
         addError("Invalid if statment on line " + lineNumber);
         return false;
     }
@@ -256,9 +294,79 @@ function checkIf(line, lineNumber) {
 }
 
 function checkFor(line, lineNumber) {
+    currentLevel += 1;
     if (!isValid("for", line)) {
         addError("Invalid for statment on line " + lineNumber);
         return false;
+    }
+    var loopCond = line.substr(line.indexOf("("));
+    var loopParts = loopCond.split(/,/g);
+    loopParts = removeSpaces(loopParts);
+    if (loopParts.length > 1) {
+        var stepName = loopParts[0].substr(1, loopParts[0].length - 1);
+        if (stepName.match(/\s*[a-zA-Z_][a-zA-Z0-9_]*\s*/) == null) {
+            addError("Invalid for statment on line " + lineNumber);
+            return false;
+        }
+        var varEntry = findUnVar(stepName);
+        if (varEntry != null && varEntry.endLine == 0) {
+            addError("Stepper variable already in use on line " + lineNumber);
+            return false;
+        }
+        var newVar = new uninitialisedVariable("int", stepName, lineNumber, currentLevel, 0);
+        uninitialisedVariables.push(newVar);
+        if (loopParts.length == 2) {
+            var end = loopParts[1].substr(0, loopParts[1].length - 1);
+            if (end.charAt(0) == "<" || end.charAt(0) == ">" || end.charAt(0) == "!" || end.charAt(0) == "=") {
+                end = end.substr(1, end.length - 1);
+                if (end.charAt(0) == "=") {
+                    end = end.substr(1, end.length - 1);
+                }
+            }
+            if (!checkBrackets(end)) {
+                addError("Invalid expression in for loop on line " + lineNumber);
+                return false;
+            }
+        } else if (loopParts.length == 3) {
+            var start = loopParts[1];
+            if (!checkBrackets(start)) {
+                addError("Invalid expression in for loop on line " + lineNumber);
+                return false;
+            }
+            var end = loopParts[2].substr(0, loopParts[2].length - 1);
+            if (end.charAt(0) == "<" || end.charAt(0) == ">" || end.charAt(0) == "!" || end.charAt(0) == "=") {
+                end = end.substr(1, end.length - 1);
+                if (end.charAt(0) == "=") {
+                    end = end.substr(1, end.length - 1);
+                }
+            }
+            if (!checkBrackets(end)) {
+                addError("Invalid expression in for loop on line " + lineNumber);
+                return false;
+            }
+        } else {
+            var start = loopParts[1];
+            if (!checkBrackets(start)) {
+                addError("Invalid expression in for loop on line " + lineNumber);
+                return false;
+            }
+            var end = loopParts[2];
+            if (end.charAt(0) == "<" || end.charAt(0) == ">" || end.charAt(0) == "!" || end.charAt(0) == "=") {
+                end = end.substr(1, end.length - 1);
+                if (end.charAt(0) == "=") {
+                    end = end.substr(1, end.length - 1);
+                }
+            }
+            if (!checkBrackets(end)) {
+                addError("Invalid expression in for loop on line " + lineNumber);
+                return false;
+            }
+            var inc = loopParts[3].substr(0, loopParts[3].length - 1);
+            if (!checkBrackets(end)) {
+                addError("Invalid expression in for loop on line " + lineNumber);
+                return false;
+            }
+        }
     }
     return true;
 }
@@ -289,7 +397,7 @@ function isValid(type, line) {
             return line.match(/^(if|else\s+if|else)\s*\(.+\)\s*$/) != null;
             break;
         case "for":
-            return line.match(/^for\s*\(+\s*([a-zA-Z_][a-zA-Z0-9_]*\s*,\s*-?[0-9]+(\s*,\s*-?[0-9]+(\s*,\s*-?[0-9]+)?)?|-?[0-9]+)\s*\)+\s*$/) != null;
+            return line.match(/^for\s*\(+\s*.*\s*\)+\s*$/) != null;
             break;
     }
 }
@@ -335,7 +443,7 @@ function removeMinusSigns(exp) {
 }
 
 function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
-    if (isIf) {
+    if (!isIf) {
         var varEntry = findUnVar(varName);
         if (varEntry == null && !isDeclaring) {
             return false;
@@ -350,12 +458,12 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
     expList = removeBlankEntries(expList);
     expList = getNegativesAndSubraction(expList);
     var varList = getVarsFromExp(expList);
-    if (!allDeclared(varList)) {
+    if (!allDeclared(varList, lineNumber)) {
         addError("Undeclared variable(s) on line " + lineNumber);
         return false;
     }
-    if (isIf && varEntry == null && isDeclaring) {
-        var newVar = new uninitialisedVariable("bool", varName);
+    if (!isIf && varEntry == null && isDeclaring) {
+        var newVar = new uninitialisedVariable("bool", varName, lineNumber, currentLevel, 0);
         uninitialisedVariables.push(newVar);
         varEntry = newVar;
     }
@@ -368,8 +476,8 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
     var newExp = pred.replace(/\(*(true|false)\)*/g, '{');
     newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*/g, '@v');
     newExp = newExp.replace(/{/g, '@b');
-    newExp = newExp.replace(/\(*'('.*'.*)*[^']*'\)*/g, '@c');
-    newExp = newExp.replace(/\(*"(".*".*)*[^"]*"\)*/g, '@s');
+    newExp = newExp.replace(/\(*'.*'\)*/g, '@c');
+    newExp = newExp.replace(/\(*".*"\)*/g, '@s');
     newExp = newExp.replace(/\(*[0-9]+(\.[0-9]+)\)*/g, '@f');
     newExp = newExp.replace(/\(*[0-9]+\)*/g, '@i');
     newExp = removeMinusSigns(newExp);
@@ -503,7 +611,7 @@ function checkBrackets(exp, type) {
     expList = removeBlankEntries(expList);
     expList = getNegativesAndSubraction(expList);
     var newExp = replaceNegativesAndConcat(expList);
-    newExp = newExp.replace(/\(*([0-9]+(\.[0-9]+)?|"(".*".*)*[^"]*"|'('.*'.*)*[^']*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*)\)*/g, '@');
+    newExp = newExp.replace(/\(*([0-9]+(\.[0-9]+)?|".*"|'.*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*)\)*/g, '@');
     var oldExp = newExp;
     do {
         oldExp = newExp;
@@ -566,11 +674,11 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     expList = getNegativesAndSubraction(expList);
     litList = getLiteralExpListWithoutOperatorsAndVars(expList);
     var varList = getVarsFromExp(expList);
-    if (!allDeclared(varList)) {
+    if (!allDeclared(varList, lineNumber)) {
         return false;
     }
     if (varEntry == null && isDeclaring) {
-        var newVar = new uninitialisedVariable(varType, varName);
+        var newVar = new uninitialisedVariable(varType, varName, lineNumber, currentLevel, 0);
         uninitialisedVariables.push(newVar);
         varEntry = newVar;
     }
@@ -606,7 +714,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
 
     if (varEntry.type == "string") {
         for (var i = 0; i < litList.length; i++) {
-            if (!checkEscape(litList[i])) {
+            if (!checkEscape(litList[i], lineNumber)) {
                 return false;
             }
         }
@@ -631,9 +739,14 @@ function checkEscape(str, lineNumber) {
     return true;
 }
 
-function allDeclared(vs) {
+function allDeclared(vs, lineNumber) {
     for (var i = 0; i < vs.length; i++) {
-        if (findUnVar(vs[i]) == null) {
+        var v = findUnVar(vs[i]);
+        if (v == null) {
+            return false;
+        }
+        if (v.endLine < lineNumber && v.endLine != 0) {
+            addError("Variable out of scope on line " + lineNumber);
             return false;
         }
     }

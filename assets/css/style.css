@@ -136,6 +136,7 @@ li a {
     display: block;
     background-color: rgba(79, 205, 205, 0);
     color: #444444;
+    z-index: 1;
 }
 
 #noodleOutputBoxContainer {
