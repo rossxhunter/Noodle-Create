@@ -22,11 +22,15 @@ function settingsClick() {
 }
 
 function done() {
-    document.getElementById('myModal').style.display = "none";
     var theme = document.getElementById('themeSelect').value;
     var fontSize = document.getElementById('fontSizeSelect').value;
-    setTheme(theme);
-    setFontSize(fontSize);
+    if (fontSize >= 8 && fontSize <= 20) {
+        document.getElementById('myModal').style.display = "none";
+        var theme = document.getElementById('themeSelect').value;
+        var fontSize = document.getElementById('fontSizeSelect').value;
+        setTheme(theme);
+        setFontSize(fontSize);
+    }
 }
 
 function setTheme(theme) {
@@ -118,8 +122,6 @@ function noodle(code) {
         $("#errorIndicator").attr("src", "assets/images/tick.png");
         shouldSkip = false;
         satisfied = false;
-        shouldLoop = false;
-        shouldStopLoop = false;
         codeBlockStack = [];
         endStack = [];
         finishStack = [];
@@ -134,20 +136,52 @@ function execute(arrayOfLines, i) {
         if (endStack[endStack.length - 1] == true) {
             return j;
         }
-        if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length -1] == true) {
+        if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length - 1] == true) {
             finishStack.pop();
             finishStack.push(false);
-            var loops = loopsLeft.pop();
+            var inc = parseInt(increment.pop());
+            var start = parseInt(currentStepper.pop());
+            var end = parseInt(target.pop());
+            var stepper = stepperVar[stepperVar.length - 1];
             var l;
-            for (var k = 0; k < loops; k++) {
+            var count = 0;
+            var overflow = false;
+            var equality;
+            if (start <= end) {
+                equality = "<";
+            } else {
+                equality = ">";
+            }
+            while (equalityHolds(start, end, equality) && !overflow) {
                 l = execute(arrayOfLines, j + 1);
                 endStack[endStack.length - 1] = false;
+                start += inc;
+                count += 1;
+                if (count > 10000) {
+                    overflow = true;
+                }
+            }
+            if (overflow) {
+                var line = j + 1
+                addError("Stack overflow on line " + line);
+                return;
             }
             endStack.pop();
             finishStack.pop();
             codeBlockStack.pop();
+            stepperVar.pop();
             j = l;
         }
+    }
+}
+
+function equalityHolds(start, end, equality) {
+    switch (equality) {
+        case "<":
+            return start < end;
+        case ">":
+            return start > end;
+
     }
 }
 

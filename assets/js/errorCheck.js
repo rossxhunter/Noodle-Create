@@ -41,11 +41,11 @@ function errorCheck(arrayOfLines, blockStack) {
                 return false;
             }
             blockStack.push(new codeBlock("else", j + 1));
-        } else if (arrayOfLines[j].replace(/^\s+/, '').search("for ") == 0) {
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search("for") == 0) {
             blockStack.push(new codeBlock("for", j + 1));
         } else if (arrayOfLines[j].replace(/^\s+/, '').search("end") == 0) {
             if (blockStack.length != 0) {
-                blockStack.pop();
+                blockStack.shift();
             } else {
                 var line = j + 1;
                 addError("Unexpected end statment on line " + j);
@@ -74,7 +74,7 @@ function unendedBlockError(blockStack) {
         } else if (blockStack[i].type == "else") {
             addError("Unended else statment on line " + blockStack[i].line);
         } else if (blockStack[i].type == "for") {
-            addError("Unended if statment on line " + blockStack[i].line);
+            addError("Unended for statment on line " + blockStack[i].line);
         } else if (blockStack[i].type == "main") {
             addError("Unended main function on line " + blockStack[i].line);
         }
@@ -289,7 +289,7 @@ function isValid(type, line) {
             return line.match(/^(if|else\s+if|else)\s*\(.+\)\s*$/) != null;
             break;
         case "for":
-            return line.match(/^for\s*\(+\s*[0-9]+\s*\)+\s*$/) != null;
+            return line.match(/^for\s*\(+\s*([a-zA-Z_][a-zA-Z0-9_]*\s*,\s*-?[0-9]+(\s*,\s*-?[0-9]+(\s*,\s*-?[0-9]+)?)?|-?[0-9]+)\s*\)+\s*$/) != null;
             break;
     }
 }
@@ -425,6 +425,7 @@ function checkSinglePredicate(singlePredList, lineNumber) {
             return false;
         }
         var typeList = singlePredList[i].match(/@./g);
+        typeList = castNumbersAndText(typeList);
         var current = typeList[i];
         for (var j = 0; j < typeList.length; j++) {
             if (typeList[j] != current) {
@@ -442,6 +443,17 @@ function checkSinglePredicate(singlePredList, lineNumber) {
         }
     }
     return true;
+}
+
+function castNumbersAndText(list) {
+    for (var i = 0; i < list.length; i++) {
+        if (list[i] == "@i") {
+            list[i] = "@f";
+        } else if (list[i] == "@c") {
+            list[i] = "@s";
+        }
+    }
+    return list;
 }
 
 function getTypeFromAtSymbol(atSym) {

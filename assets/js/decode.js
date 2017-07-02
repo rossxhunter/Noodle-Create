@@ -13,12 +13,14 @@ function escapeRegExp(string) {
 //Unfortunate but necessary globals
 var shouldSkip = false;
 var satisfied = false;
-var shouldLoop = false;
-var shouldStopLoop = false;
 var codeBlockStack = [];
 var endStack = [];
 var finishStack = [];
-var loopsLeft = [];
+var stepperVar = [];
+var currentStepper = [];
+var target = [];
+var increment = [];
+
 
 function decode(line) {
     if (!shouldSkip) {
@@ -40,8 +42,8 @@ function decode(line) {
             shouldSkip = true;
             codeBlockStack.pop();
             codeBlockStack.push("else");
-        } else if (line.match(/for\s*\(+[0-9]+\)+\s*/) != null) {
-            loopsLeft.push(decodeBasicFor(line));
+        } else if (line.match(/for\s*\(/) != null) {
+            decodeBasicFor(line);
             endStack.push(false);
             finishStack.push(true);
             codeBlockStack.push("for");
@@ -153,8 +155,34 @@ function decodeIf(line) {
 
 function decodeBasicFor(line) {
     var loopCond = line.substr(line.indexOf("("));
-    var loopNum = evaluateExpression(loopCond, "int");
-    return loopNum;
+    var loopParts = loopCond.split(/,/g);
+    if (loopParts.length == 1) {
+        currentStepper.push(0);
+        target.push(evaluateExpression(loopParts[0], "int"));
+        increment.push(1);
+        stepperVar.push("");
+    } else if (loopParts.length == 2) {
+        currentStepper.push(0);
+        target.push(evaluateExpression(loopParts[1].replace(/\)/, ''), "int"));
+        increment.push(1);
+        stepperVar.push(loopParts[0]);
+    } else if (loopParts.length == 3) {
+        stepperVar.push(loopParts[0]);
+        var start = evaluateExpression(loopParts[1], "int");
+        var end = evaluateExpression(loopParts[2].replace(/\)/, ''), "int");
+        currentStepper.push(start);
+        target.push(end);
+        if (start <= end) {
+            increment.push(1);
+        } else {
+            increment.push(-1);
+        }
+    } else {
+        currentStepper.push(evaluateExpression(loopParts[1], "int"));
+        target.push(evaluateExpression(loopParts[2], "int"));
+        increment.push(evaluateExpression(loopParts[3].replace(/\)/, ''), "int"));
+        stepperVar.push(loopParts[0]);
+    }
 }
 
 function getDefaultValue(varType) {
@@ -257,6 +285,16 @@ function getNegativesAndSubraction(expList) {
     return expList;
 }
 
+function castOp(op) {
+    if (getTypeOfVarsAndLits([op.toString()])[0] == "int") {
+        return parseFloat(op);
+    } else if (getTypeOfVarsAndLits([op.toString()])[0] == "char") {
+        op = op.replace(/\'/g, '');
+        return "\"".concat(op).concat("\"");
+    }
+    return op;
+}
+
 function evaluateExpression(exp, type) {
     var expList = exp.split(/(\+|-|\*|\/|\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
     expList = removeSpaces(expList);
@@ -277,10 +315,12 @@ function evaluateExpression(exp, type) {
                 var op = operatorStack.pop();
                 var op1 = operandStack.pop();
                 var op2 = operandStack.pop();
+                op1 = castOp(op1);
+                op2 = castOp(op2);
                 if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
                 } else if (type == "bool" && op != "&&" && op != "||") {
-                    var expType = getTypeOfVarsAndLits([op1])[0];
+                    var expType = getTypeOfVarsAndLits([op1.toString()])[0];
                     operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
                 } else {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, type));
@@ -292,11 +332,12 @@ function evaluateExpression(exp, type) {
                 op = operatorStack.pop();
                 op1 = operandStack.pop();
                 op2 = operandStack.pop();
+                op1 = castOp(op1);
+                op2 = castOp(op2);
                 if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
                 } else if (type == "bool" && op != "&&" && op != "||") {
-                    var expType = getTypeOfVarsAndLits([op1])[0];
-
+                    var expType = getTypeOfVarsAndLits([op1.toString()])[0];
                     operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
                 } else {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, type));
@@ -312,10 +353,12 @@ function evaluateExpression(exp, type) {
         var op = operatorStack.pop();
         var op1 = operandStack.pop();
         var op2 = operandStack.pop();
+        op1 = castOp(op1);
+        op2 = castOp(op2);
         if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
             operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
         } else if (type == "bool" && op != "&&" && op != "||") {
-            var expType = getTypeOfVarsAndLits([op1])[0];
+            var expType = getTypeOfVarsAndLits([op1.toString()])[0];
             operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
         } else {
             operandStack.push(evaluateSingleExpression(op, op1, op2, type));
@@ -373,6 +416,10 @@ function evaluateSingleExpression(op, op1, op2, type) {
                 return op1 || op2;
         }
     } else if (type == "pred") {
+        if (getTypeOfVarsAndLits([op1.toString()]) == "string") {
+            op1 = op1.replace(/(\"|\')/g, '');
+            op2 = op2.replace(/(\"|\')/g, '');
+        }
         switch (op) {
             case "==":
                 return op1 == op2;
