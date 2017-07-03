@@ -128,15 +128,30 @@ function noodle(code) {
         finishStack = [];
         loopsLeft = [];
         stepperVar = [];
+        whileCount = [];
         execute(arrayOfLines, 0);
     }
 }
 
 function execute(arrayOfLines, i) {
     for (var j = i; j < arrayOfLines.length; j++) {
-        decode(arrayOfLines[j].replace(/^\s+/, ''));
+        decode(arrayOfLines[j].replace(/^\s+/, ''), j);
         if (endStack[endStack.length - 1] == true) {
-            return j;
+            if (codeBlockStack[codeBlockStack.length - 1] == "while") {
+                addEndLine(j + 1);
+                whileCount[whileCount.length - 1].count += 1;
+                if (anyWhilesOverflow()) {
+                    return;
+                }
+                if (whileCount[whileCount.length - 1].ended == false) {
+                    j = whileCount[whileCount.length - 1].line - 1;
+                } else {
+                    whileCount.pop();
+                }
+                codeBlockStack.pop();
+            } else {
+                return j;
+            }
         }
         if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length - 1] == true) {
             finishStack.pop();
@@ -181,6 +196,38 @@ function execute(arrayOfLines, i) {
             j = l;
         }
     }
+}
+
+function addEndLine(end) {
+    whileCount[whileCount.length - 1].end = end;
+}
+
+function incWhileCount(lineNumber) {
+    for (var i = 0; i < whileCount.length; i++) {
+        if (whileCount[i].line == lineNumber) {
+            whileCount[i].count += 1;
+        }
+    }
+}
+
+function anyWhilesOverflow() {
+    for (var i = 0; i < whileCount.length; i++) {
+        if (whileCount[i].count > 1000) {
+            var line = whileCount[i].line + 1;
+            addError("Stack overflow on line " + line);
+            return true;
+        }
+    }
+    return false;
+}
+
+function firstWhile(lineNumber) {
+    for (var i = 0; i < whileCount.length; i++) {
+        if (whileCount[i].line == lineNumber) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function updateStepper(stepper, inc) {

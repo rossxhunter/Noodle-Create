@@ -49,6 +49,10 @@ function errorCheck(arrayOfLines, blockStack) {
             blockStack.push(new codeBlock("else", j + 1));
         } else if (arrayOfLines[j].replace(/^\s+/, '').search("for") == 0) {
             blockStack.push(new codeBlock("for", j + 1));
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search("while") == 0) {
+            blockStack.push(new codeBlock("while", j + 1));
+        } else if (arrayOfLines[j].replace(/^\s+/, '').search("do while") == 0) {
+            blockStack.push(new codeBlock("do while", j + 1));
         } else if (arrayOfLines[j].replace(/^\s+/, '').search("end") == 0) {
             if (blockStack.length != 0) {
                 blockStack.shift();
@@ -80,7 +84,11 @@ function unendedBlockError(blockStack) {
         } else if (blockStack[i].type == "else") {
             addError("Unended else statment on line " + blockStack[i].line);
         } else if (blockStack[i].type == "for") {
-            addError("Unended for statment on line " + blockStack[i].line);
+            addError("Unended for loop on line " + blockStack[i].line);
+        } else if (blockStack[i].type == "while") {
+            addError("Unended while loop on line " + blockStack[i].line);
+        } else if (blockStack[i].type == "do while") {
+            addError("Unended do while loop on line " + blockStack[i].line);
         } else if (blockStack[i].type == "main") {
             addError("Unended main function on line " + blockStack[i].line);
         }
@@ -107,6 +115,8 @@ function checkLine(line, lineNumber) {
         isCorrect = checkIf(line, lineNumber);
     } else if (line.search(/for\s*\(/) == 0) {
         isCorrect = checkFor(line, lineNumber);
+    } else if (line.search(/(do\s+)?while\s*\(/) == 0) {
+        isCorrect = checkWhile(line, lineNumber);
     } else if (line.replace(/\s/g, '').match(/^end$/) != null) {
         updateVarScope(lineNumber, true);
     } else if (line.replace(/\s/g, '').match(/^else$/) != null) {
@@ -371,7 +381,26 @@ function checkFor(line, lineNumber) {
     return true;
 }
 
-var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end"];
+function checkWhile(line, lineNumber) {
+    currentLevel += 1;
+    if (!isValid("while", line)) {
+        addError("Invalid while loop on line " + lineNumber);
+        return false;
+    }
+    var pred = line.substr(line.indexOf("("));
+    pred = pred.replace(/\s/g, '');
+    if (!checkPredicate("", pred, lineNumber, false, true)) {
+        if (line.search("do") == 0) {
+            addError("Invalid do while loop on line " + lineNumber);
+        } else {
+            addError("Invalid while loop on line " + lineNumber);
+        }
+        return false;
+    }
+    return true;
+}
+
+var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do"];
 
 function isKeyword(name) {
     for (var i = 0; i < keywordList.length; i++) {
@@ -398,6 +427,9 @@ function isValid(type, line) {
             break;
         case "for":
             return line.match(/^for\s*\(+\s*.*\s*\)+\s*$/) != null;
+            break;
+        case "while":
+            return line.match(/^(do\s+)?while\s*\(.+\)\s*$/) != null;
             break;
     }
 }

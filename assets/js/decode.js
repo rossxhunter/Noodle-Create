@@ -4,6 +4,13 @@ function variable(type, name, value) {
     this.value = value;
 }
 
+function whileCounter(line, end, ended, count) {
+    this.line = line;
+    this.end = end;
+    this.ended = ended;
+    this.count = count;
+}
+
 var variables = [];
 
 function escapeRegExp(string) {
@@ -21,9 +28,9 @@ var currentStepper = [];
 var target = [];
 var increment = [];
 var equalityStack = [];
+var whileCount = [];
 
-
-function decode(line) {
+function decode(line, lineNumber) {
     if (!shouldSkip) {
         if (line.search("print ") == 0) {
             decodePrint(line);
@@ -48,21 +55,42 @@ function decode(line) {
             endStack.push(false);
             finishStack.push(true);
             codeBlockStack.push("for");
+        } else if (line.match(/(do\s+)?while\s*\(/) != null) {
+            shouldSkip = !decodeWhile(line);
+            endStack.push(false);
+            codeBlockStack.push("while");
+            if (firstWhile(lineNumber)) {
+                whileCount.push(new whileCounter(lineNumber, 0, false, 0));
+                if (line.match(/do\s+while\s*\(/) != null) {
+                    shouldSkip = false;
+                }
+            }
+            if (shouldSkip) {
+                whileCount[whileCount.length - 1].ended = true;
+            }
         } else if (line.trim().match(/^end$/) != null) {
-            if (codeBlockStack[codeBlockStack.length - 1] != "for") {
-                codeBlockStack.pop();
-            } else {
+            if (codeBlockStack[codeBlockStack.length - 1] == "for") {
                 endStack.pop();
                 endStack.push(true);
+
+            } else if (codeBlockStack[codeBlockStack.length - 1] == "while") {
+                endStack.pop();
+                endStack.push(true);
+            } else {
+                codeBlockStack.pop();
             }
         }
     } else if (line.trim().match(/^end$/) != null) {
-        if (codeBlockStack[codeBlockStack.length - 1] != "for") {
-            codeBlockStack.pop();
-            shouldSkip = false;
-        } else {
+        if (codeBlockStack[codeBlockStack.length - 1] == "for") {
             endStack.pop();
             endStack.push(true);
+        } else if (codeBlockStack[codeBlockStack.length - 1] == "while") {
+            shouldSkip = false;
+            endStack.pop();
+            endStack.push(true);
+        } else {
+            codeBlockStack.pop();
+            shouldSkip = false;
         }
     } else if (line.search(/else\s+if\s*\(/) == 0) {
         shouldSkip = !decodeIf(line);
@@ -202,13 +230,20 @@ function decodeFor(line) {
     }
 }
 
+function decodeWhile(line) {
+    var pred = line.substr(line.indexOf("("));
+    var evaluatedPred = evaluateExpression(pred, "bool");
+    document.getElementById('noodleOutputBox').value += evaluatedPred;
+    return evaluatedPred;
+}
+
 function getTargetAndEquality(end) {
     if (end.charAt(0) == "<" || end.charAt(0) == ">" || end.charAt(0) == "!" || end.charAt(0) == "=") {
         var eq = end.charAt(0);
-        end = end.substr(1, end.length-1);
+        end = end.substr(1, end.length - 1);
         if (end.charAt(0) == "=") {
             eq = eq.concat(end.charAt(0));
-            end = end.substr(1, end.length-1);
+            end = end.substr(1, end.length - 1);
         }
         equalityStack.push(eq);
     }
@@ -404,10 +439,10 @@ function evaluateExpression(exp, type) {
     }
     result = operandStack.pop();
     if (type == "string") {
-        result = result.substr(1, result.length-2);
+        result = result.substr(1, result.length - 2);
         result = replaceEscapes(result);
     } else if (type == "char") {
-        result = result.substr(1, result.length-2);
+        result = result.substr(1, result.length - 2);
         if (result == "\\n") {
             result = '\n';
         }
