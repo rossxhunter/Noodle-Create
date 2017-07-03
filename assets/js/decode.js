@@ -179,7 +179,10 @@ function decodeVarAss(line) {
 
 function decodeIf(line) {
     var pred = line.substr(line.indexOf("("));
+    window.alert(pred);
     var evaluatedPred = evaluateExpression(pred, "bool");
+    evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
+    window.alert(evaluatedPred);
     document.getElementById('noodleOutputBox').value += evaluatedPred;
     return evaluatedPred;
 }
@@ -233,6 +236,7 @@ function decodeFor(line) {
 function decodeWhile(line) {
     var pred = line.substr(line.indexOf("("));
     var evaluatedPred = evaluateExpression(pred, "bool");
+    evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
     document.getElementById('noodleOutputBox').value += evaluatedPred;
     return evaluatedPred;
 }

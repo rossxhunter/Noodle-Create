@@ -1,20 +1,23 @@
 function setDimensions(editor) {
+
     var body = document.body,
         html = document.documentElement;
     var height = Math.max(body.scrollHeight, body.offsetHeight,
         html.clientHeight, html.scrollHeight, html.offsetHeight);
     var editorContainer = document.getElementById("editorContainer").style.height;
-    document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.68 + 'px';
-    document.getElementById("editorContainer").style.height = (height - 102) * 0.68 + 'px';
-    document.getElementById("toolbarDiv").style.height = (height - 102) * 0.64 + 'px';
+
+    document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.85 + 'px';
+    document.getElementById("editorContainer").style.height = (height - 102) * 0.85 + 'px';
+    document.getElementById("toolbarDiv").style.height = (height - 102) * 0.8 + 'px';
+
     var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
-    var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight);
+    var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
     editor.setOption("maxLines", numberOfLines);
     editor.setOption("minLines", numberOfLines);
-    document.getElementById("errorsBorderDiv").style.height = (height - 102) * 0.16 + 2 + 'px';
+
     var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
-    var errorsHeight = parseInt(document.getElementById("errorsBorderDiv").style.height);
-    document.getElementById("outputBorderDiv").style.height = editorHeight + errorsHeight + 1 + 'px';
+    document.getElementById("outputBorderDiv").style.height = editorHeight + 1 + 'px';
+
 }
 
 function settingsClick() {
@@ -64,6 +67,19 @@ function setFontSize(fontSize) {
     $('#noodleErrorsBox').css('font-size', fontSize + 'pt');
 }
 
+
+var findShowing = false;
+
+function find() {
+    if (findShowing) {
+        editor.searchBox.hide();
+        findShowing = false;
+    } else {
+        editor.execCommand("find");
+        findShowing = true;
+    }
+}
+
 function fullScreen() {
     var body = document.body,
         html = document.documentElement;
@@ -73,17 +89,16 @@ function fullScreen() {
         $('#navbar').fadeOut('slow', function() {
             $("#mainBody").css("padding-top", "0px");
             $("#outputBorderDiv").css("height", "100%");
-            $("#editorBorderDiv").css("height", "80%");
-            $("#editorDiv").css("height", "80%");
-
-            var numberOfLines = Math.round(height / 1.26 / editor.renderer.lineHeight);
+            $("#editorBorderDiv").css("height", "100%");
+            $("#editorDiv").css("height", "100%");
+            document.getElementById("editorBorderDiv").style.height = height + 'px';
+            document.getElementById("editorContainer").style.height = height + 'px';
+            var numberOfLines = Math.round(height / editor.renderer.lineHeight) - 1;
             editor.setOption("maxLines", numberOfLines);
             editor.setOption("minLines", numberOfLines);
-            document.getElementById("editorBorderDiv").style.height = height * 0.8 + 'px';
-            document.getElementById("editorContainer").style.height = height * 0.8 + 'px';
-            document.getElementById("toolbarDiv").style.height = height * 0.76 + 'px';
-            document.getElementById("errorsBorderDiv").style.height = height * 0.2 - 2 + 'px';
-            $("#noodleErrorsBoxContainer").css("height", "20%");
+            var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
+            document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+            document.getElementById("toolbarDiv").style.height = height * 0.95 + 'px';
             $("#fullScreen").attr("src", "assets/images/smallScreen.png");
         });
     } else {
@@ -91,18 +106,15 @@ function fullScreen() {
             $("#mainBody").css("padding-top", "32px");
             $("#outputBorderDiv").css("height", "100%");
             $("#editorBorderDiv").css("height", "100%");
-            document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.8 + 'px';
-            document.getElementById("editorContainer").style.height = (height - 102) * 0.8 + 'px';
-            document.getElementById("toolbarDiv").style.height = (height - 102) * 0.76 + 'px';
+            document.getElementById("editorBorderDiv").style.height = (height - 102) + 'px';
+            document.getElementById("editorContainer").style.height = (height - 102) + 'px';
+            document.getElementById("toolbarDiv").style.height = (height - 102) * 0.96 + 'px';
             var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
-            var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight);
+            var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
             editor.setOption("maxLines", numberOfLines);
             editor.setOption("minLines", numberOfLines);
-            document.getElementById("errorsBorderDiv").style.height = (height - 102) * 0.2 + 'px';
-            $("#noodleErrorsBoxContainer").css("height", "100%");
             var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
-            var errorsHeight = parseInt(document.getElementById("errorsBorderDiv").style.height);
-            document.getElementById("outputBorderDiv").style.height = editorHeight + errorsHeight + 1 + 'px';
+            document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
             $("#fullScreen").attr("src", "assets/images/fullScreen.png");
         });
     }

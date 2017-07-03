@@ -78,50 +78,33 @@
       </div>
       <div id="mainTableDiv">
         <div class="table-div" style="width:100%">
-          <div class="table-div" style="width:55%">
-            <div class="tr-div">
-              <div id="editorContainer" class="td-div">
-                <div id="editorBorderDiv">
-                </div>
-                <div id="editorDiv">
-                  <pre id="editor"></pre>
-                  <script src="ace/demo/kitchen-sink/require.js"></script>
-                  <script src="assets/js/setupEditor.js"></script>
-                  <script>
-                    setupEditor();
-                  </script>
-                </div>
+          <div class="tr-div">
+            <div id="editorContainer" class="td-div">
+              <div id="editorBorderDiv">
               </div>
-              <div id="toolbarDiv" class="td-div">
-
-                <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
-
-                <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
-                <img onclick="settingsClick()" id="settings" src="assets/images/settings.png" />
-                <img id="clean" src="assets/images/clean.png" />
-                <img id="errorIndicator" />
+              <div id="editorDiv">
+                <pre id="editor"></pre>
+                <script src="ace/demo/kitchen-sink/require.js"></script>
+                <script src="assets/js/setupEditor.js"></script>
+                <script>
+                  setupEditor();
+                </script>
               </div>
             </div>
-            <div class="tr-div">
-              <div class="td-div" id="noodleErrorsBoxContainer">
-                <div id="errorsBorderDiv">
-                  <div id="errorsText">
-                    ERRORS
-                  </div>
-                  <textarea id="noodleErrorsBox" readonly></textarea>
-                </div>
-              </div>
+            <div id="toolbarDiv" class="td-div">
+              <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
+              <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
+              <img onclick="find()" id="find" src="assets/images/find.png" />
+              <img id="clean" src="assets/images/clean.png" />
+              <img onclick="settingsClick()" id="settings" src="assets/images/settings.png" />
+              <img id="errorIndicator" />
             </div>
-          </div>
-          <div class="table-div" style="width:45%">
-            <div class="tr-div">
-              <div class="td-div" id="noodleOutputBoxContainer">
-                <div id="outputBorderDiv">
-                  <div id="outputText">
-                    OUTPUT
-                  </div>
-                  <textarea id="noodleOutputBox" readonly></textarea>
+            <div class="td-div" id="noodleOutputBoxContainer">
+              <div id="outputBorderDiv">
+                <div id="outputText">
+                  OUTPUT
                 </div>
+                <textarea id="noodleOutputBox" readonly></textarea>
               </div>
             </div>
           </div>

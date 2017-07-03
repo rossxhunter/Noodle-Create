@@ -14,7 +14,7 @@ function setupEditor() {
         editor.session.setOptions({
             mode: "ace/mode/noodle",
             tabSize: 2,
-            useSoftTabs: true,
+            useSoftTabs: false
         });
         editor.setOptions({
             enableBasicAutocompletion: true,

@@ -16,7 +16,7 @@ function codeBlock(type, line) {
 var currentLevel = 0;
 
 function errorCheck(arrayOfLines, blockStack) {
-    document.getElementById('noodleErrorsBox').value = "";
+    document.getElementById('noodleOutputBox').value = "";
     var i = 0;
     while (i != arrayOfLines.length && arrayOfLines[i].match(/\s*func\s+main\s*(\s*)\s*/) == null) {
         i += 1;
@@ -96,7 +96,7 @@ function unendedBlockError(blockStack) {
 }
 
 function addError(error) {
-    document.getElementById('noodleErrorsBox').value += "-" + error + "\n";
+    document.getElementById('noodleOutputBox').value += "-" + error + "\n";
 }
 
 function checkLine(line, lineNumber) {
