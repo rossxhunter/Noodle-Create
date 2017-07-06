@@ -14,7 +14,7 @@
 }
 
 .ace-noodle_light .ace_cursor {
-  color: #bbbbbb
+  color: #aaaaaa
 }
 
 .ace-noodle_light .ace_marker-layer .ace_selection {
@@ -35,7 +35,7 @@
 }
 
 .ace-noodle_light .ace_marker-layer .ace_active-line {
-  background: rgba(255, 255, 255, 0.2)
+  background: rgba(200, 200, 200, 0.2)
 }
 
 .ace-noodle_light .ace_gutter-active-line {
@@ -111,7 +111,7 @@
 
 .ace-noodle_light .ace_comment {
   font-style: italic;
-  color: #5F5A60
+  color: #999999;
 }
 
 .ace-noodle_light .ace_variable {

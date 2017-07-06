@@ -1,5 +1,11 @@
-function setDimensions(editor) {
+var linesArray;
+var sizeMode = 0;
 
+function setDimensions(editor) {
+    setSize0();
+}
+
+function setSize0() {
     var body = document.body,
         html = document.documentElement;
     var height = Math.max(body.scrollHeight, body.offsetHeight,
@@ -8,7 +14,7 @@ function setDimensions(editor) {
 
     document.getElementById("editorBorderDiv").style.height = (height - 102) * 0.85 + 'px';
     document.getElementById("editorContainer").style.height = (height - 102) * 0.85 + 'px';
-    document.getElementById("toolbarDiv").style.height = (height - 102) * 0.8 + 'px';
+    document.getElementById("toolbarDiv").style.height = (height - 102) * 0.85 * 0.96 + 'px';
 
     var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
     var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
@@ -17,8 +23,15 @@ function setDimensions(editor) {
 
     var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
     document.getElementById("outputBorderDiv").style.height = editorHeight + 1 + 'px';
-
 }
+
+window.addEventListener('resize', function(event){
+  switch (sizeMode) {
+      case 0 : setSize1();
+      case 1 : setSize2();
+      case 2 : setSize1();
+  }
+});
 
 function settingsClick() {
     document.getElementById('myModal').style.display = "block";
@@ -80,43 +93,57 @@ function find() {
     }
 }
 
-function fullScreen() {
+function setSize1() {
     var body = document.body,
         html = document.documentElement;
     var height = Math.max(body.scrollHeight, body.offsetHeight,
         html.clientHeight, html.scrollHeight, html.offsetHeight);
+    $('#navbar').fadeOut('slow', function() {
+        $("#fullScreen").attr("src", "assets/images/smallScreen.png");
+        $("#mainBody").css("padding-top", "0px");
+        $("#outputBorderDiv").css("height", "100%");
+        $("#editorBorderDiv").css("height", "100%");
+        $("#editorDiv").css("height", "100%");
+        document.getElementById("editorBorderDiv").style.height = height + 'px';
+        document.getElementById("editorContainer").style.height = height + 'px';
+        var numberOfLines = Math.round(height / editor.renderer.lineHeight) - 1;
+        editor.setOption("maxLines", numberOfLines);
+        editor.setOption("minLines", numberOfLines);
+        var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
+        document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+        document.getElementById("toolbarDiv").style.height = height * 0.96 + 'px';
+    });
+}
+
+function setSize2() {
+    var body = document.body,
+        html = document.documentElement;
+    var height = Math.max(body.scrollHeight, body.offsetHeight,
+        html.clientHeight, html.scrollHeight, html.offsetHeight);
+    $("#mainBody").css("padding-top", "32px");
+    $("#fullScreen").attr("src", "assets/images/fullScreen.png");
+    $('#navbar').fadeIn('slow', function() {
+        $("#outputBorderDiv").css("height", "100%");
+        $("#editorBorderDiv").css("height", "100%");
+        document.getElementById("editorBorderDiv").style.height = (height - 102) + 'px';
+        document.getElementById("editorContainer").style.height = (height - 102) + 'px';
+        var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
+        var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
+        editor.setOption("maxLines", numberOfLines);
+        editor.setOption("minLines", numberOfLines);
+        var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
+        document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+        document.getElementById("toolbarDiv").style.height = (height - 102) * 0.96 + 'px';
+    });
+}
+
+function fullScreen() {
     if (document.getElementById("mainBody").style.paddingTop != '0px') {
-        $('#navbar').fadeOut('slow', function() {
-            $("#mainBody").css("padding-top", "0px");
-            $("#outputBorderDiv").css("height", "100%");
-            $("#editorBorderDiv").css("height", "100%");
-            $("#editorDiv").css("height", "100%");
-            document.getElementById("editorBorderDiv").style.height = height + 'px';
-            document.getElementById("editorContainer").style.height = height + 'px';
-            var numberOfLines = Math.round(height / editor.renderer.lineHeight) - 1;
-            editor.setOption("maxLines", numberOfLines);
-            editor.setOption("minLines", numberOfLines);
-            var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
-            document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
-            document.getElementById("toolbarDiv").style.height = height * 0.95 + 'px';
-            $("#fullScreen").attr("src", "assets/images/smallScreen.png");
-        });
+        sizeMode = 1;
+        setSize1();
     } else {
-        $('#navbar').fadeIn('slow', function() {
-            $("#mainBody").css("padding-top", "32px");
-            $("#outputBorderDiv").css("height", "100%");
-            $("#editorBorderDiv").css("height", "100%");
-            document.getElementById("editorBorderDiv").style.height = (height - 102) + 'px';
-            document.getElementById("editorContainer").style.height = (height - 102) + 'px';
-            document.getElementById("toolbarDiv").style.height = (height - 102) * 0.96 + 'px';
-            var editorBorderDiv = parseInt(document.getElementById("editorBorderDiv").style.height);
-            var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
-            editor.setOption("maxLines", numberOfLines);
-            editor.setOption("minLines", numberOfLines);
-            var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
-            document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
-            $("#fullScreen").attr("src", "assets/images/fullScreen.png");
-        });
+        sizeMode = 2;
+        setSize2();
     }
 }
 
@@ -126,8 +153,11 @@ function noodle(code) {
     variables = [];
     uninitialisedVariables = [];
     var arrayOfLines = code.split(/\r?\n/);
+    linesArray = arrayOfLines;
     var blockStack = [];
     currentLevel = 0;
+    hasMain = false;
+    funcList = [];
     var isCorrect = errorCheck(arrayOfLines, blockStack);
     if (isCorrect) {
         document.getElementById('noodleOutputBox').value = "";
@@ -141,13 +171,21 @@ function noodle(code) {
         loopsLeft = [];
         stepperVar = [];
         whileCount = [];
-        execute(arrayOfLines, 0);
+        target = [];
+        currentStepper = [];
+        increment = [];
+        shouldReturn = false;
+        execute(arrayOfLines, mainFunction.start - 1, mainFunction.end - 1);
     }
 }
 
-function execute(arrayOfLines, i) {
-    for (var j = i; j < arrayOfLines.length; j++) {
+function execute(arrayOfLines, i, endLine) {
+    for (var j = i; j < endLine; j++) {
         decode(arrayOfLines[j].replace(/^\s+/, ''), j);
+        if (shouldReturn) {
+            shouldReturn = false;
+            return;
+        }
         if (endStack[endStack.length - 1] == true) {
             if (codeBlockStack[codeBlockStack.length - 1] == "while") {
                 addEndLine(j + 1);
@@ -184,7 +222,7 @@ function execute(arrayOfLines, i) {
                 }
             }
             while (equalityHolds(start, end, equality) && !overflow) {
-                l = execute(arrayOfLines, j + 1);
+                l = execute(arrayOfLines, j + 1, endLine);
                 endStack[endStack.length - 1] = false;
                 if (stepper == "") {
                     start += inc;

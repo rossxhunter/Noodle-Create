@@ -12,6 +12,9 @@ function whileCounter(line, end, ended, count) {
 }
 
 var variables = [];
+var shouldReturn = false;
+var returnV;
+var passedArgs = [];
 
 function escapeRegExp(string) {
     return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
@@ -31,6 +34,7 @@ var equalityStack = [];
 var whileCount = [];
 
 function decode(line, lineNumber) {
+    line = line.trim();
     if (!shouldSkip) {
         if (line.search("print ") == 0) {
             decodePrint(line);
@@ -68,6 +72,12 @@ function decode(line, lineNumber) {
             if (shouldSkip) {
                 whileCount[whileCount.length - 1].ended = true;
             }
+        } else if (line.trim().match(/^(return|return\s.*)$/) != null) {
+            decodeReturn(line, lineNumber);
+        } else if (line.search(/\s*func\s+main\s*\(\s*\)\s*/) == 0) {
+
+        } else if (line.replace(/^\s+/, '').search(/func(\s*\(|\s)/) == 0) {
+            decodeFunc(line);
         } else if (line.trim().match(/^end$/) != null) {
             if (codeBlockStack[codeBlockStack.length - 1] == "for") {
                 endStack.pop();
@@ -76,6 +86,8 @@ function decode(line, lineNumber) {
             } else if (codeBlockStack[codeBlockStack.length - 1] == "while") {
                 endStack.pop();
                 endStack.push(true);
+            } else if (codeBlockStack[codeBlockStack.length-1] == "func") {
+                shouldReturn = true;
             } else {
                 codeBlockStack.pop();
             }
@@ -88,6 +100,8 @@ function decode(line, lineNumber) {
             shouldSkip = false;
             endStack.pop();
             endStack.push(true);
+        } else if (codeBlockStack[codeBlockStack.length-1] == "func") {
+            shouldReturn = true;
         } else {
             codeBlockStack.pop();
             shouldSkip = false;
@@ -179,10 +193,8 @@ function decodeVarAss(line) {
 
 function decodeIf(line) {
     var pred = line.substr(line.indexOf("("));
-    window.alert(pred);
     var evaluatedPred = evaluateExpression(pred, "bool");
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
-    window.alert(evaluatedPred);
     document.getElementById('noodleOutputBox').value += evaluatedPred;
     return evaluatedPred;
 }
@@ -239,6 +251,32 @@ function decodeWhile(line) {
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
     document.getElementById('noodleOutputBox').value += evaluatedPred;
     return evaluatedPred;
+}
+
+function decodeFunc(line) {
+    var args = getArgs(line);
+    addArgsToDecodeVars(args);
+}
+
+function addArgsToDecodeVars(args) {
+    for (var i = 0; i < args.length; i++) {
+        var oldVar = findVar(args[i].name);
+        if (oldVar == null) {
+            variables.push(new variable(args[i].type, args[i].name, passedArgs[i]));
+        }
+        else {
+            updateVarVal(args[i].name, passedArgs[i]);
+        }
+    }
+}
+
+function decodeReturn(line, lineNumber) {
+    var returnValue = line.substr(line.indexOf("n") + 1).trim();
+    var func = findFuncByLine(lineNumber + 1);
+    returnValue = evaluateExpression(returnValue, func.type);
+    returnValue = removeSpacesAndParseType(returnValue, func.type);
+    returnV = returnValue;
+    shouldReturn = true;
 }
 
 function getTargetAndEquality(end) {
@@ -303,7 +341,7 @@ function isOperand(char) {
 function getLiteralExpList(expList) {
     var litExpList = [];
     for (var i = 0; i < expList.length; i++) {
-        if (isOperator(expList[i]) || isOperand(expList[i]) || expList[i] == "(" || expList[i] == ")") {
+        if (isOperator(expList[i]) || isOperand(expList[i]) || expList[i] == "(" || expList[i] == ")" || expList[i] == "@fc") {
             litExpList.push(expList[i]);
 
         } else {
@@ -372,12 +410,60 @@ function castOp(op) {
     return op;
 }
 
+function getFuncReturnVal(name, args) {
+    var func = findFuncByName(name);
+    passedArgs = args;
+    execute(linesArray, func.start - 1, func.end - 1);
+    return returnV;
+}
+
+function replaceFuncsWithVals(expList, funcNames, funcs) {
+    var j = 0;
+    for (var i = 0; i < expList.length; i++) {
+        if (expList[i] == "@fc") {
+            var args = getArgsFromCall(funcs[j]);
+            var f = findFuncByName(funcNames[j]);
+            args = evaluateArgs(args, f.args);
+            expList[i] = getFuncReturnVal(funcNames[j], args);
+            j += 1;
+        }
+    }
+    return expList;
+}
+
+function evaluateArgs(args, reqArgs) {
+    for (var i = 0; i < args.length; i++) {
+        args[i] = evaluateExpression(args[i], reqArgs[i].type);
+    }
+    return args;
+}
+
+function getArgsFromCall(line) {
+    var args = line;
+    args = args.substr(args.indexOf("("));
+    args = args.substr(1, args.length - 2);
+    args = args.trim();
+    args = args.split(/,/);
+    args = removeBlankEntries(args);
+    if (args == null) {
+        args = [];
+    }
+    return args;
+}
+
 function evaluateExpression(exp, type) {
-    var expList = exp.split(/(\+|-|\*|\/|\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
+    var funcs = exp.match(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)/g);
+    if (funcs == null) {
+        funcs = [];
+    }
+    var funcNames = removeArgs(funcs);
+    var expList = exp.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)/g, '@fc');
+    expList = expList.split(/(\+|-|\*|\/|\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
     expList = removeSpaces(expList);
     expList = removeBlankEntries(expList);
     expList = getNegativesAndSubraction(expList);
     var literalExpList = getLiteralExpList(expList);
+    literalExpList = replaceFuncsWithVals(literalExpList, funcNames, funcs);
     var i = 0;
     var operandStack = [];
     var operatorStack = [];
