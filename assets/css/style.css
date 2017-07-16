@@ -121,6 +121,7 @@ li a {
 #noodleOutputBoxDiv {
     height: 75%;
     margin: auto;
+    z-index: 1;
 }
 
 #noodleOutputBox {
@@ -145,6 +146,7 @@ li a {
     width: 45%;
     margin-right: 0px;
     height: 100%;
+    z-index: 1;
 }
 
 #outputText {
@@ -170,7 +172,7 @@ li a {
 
 #outputBorderDiv {
     position: absolute;
-    z-index: -1;
+    z-index: 1;
     width: 45%;
     border-left-style: solid;
     border-left-width: 1px;

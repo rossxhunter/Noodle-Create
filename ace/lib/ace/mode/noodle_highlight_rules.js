@@ -10,13 +10,11 @@ define(function(require, exports, module) {
         // regexps are ordered -> the first match is used
 
         var keywords = (
-            "func|if|else|end|for|while|do|print|true|false|return"
+            "func|if|else|end|for|while|do|print|true|false|return|null|struct"
         );
-
         var typeList = (
-            "int|float|bool|char|string"
+            "int|float|char|bool|string|T"
         );
-
 
         var keywordMapper = this.createKeywordMapper({
             //"variable.language": "this",
@@ -27,12 +25,11 @@ define(function(require, exports, module) {
         }, "identifier");
 
         this.$rules = {
-            "start" : [
-                {
-                    token : keywordMapper,
+            "start": [{
+                    token: keywordMapper,
                     // TODO: Unicode escape sequences
                     // TODO: Unicode identifiers
-                    regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+                    regex: "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
                 },
                 {
                     token: "string",
@@ -55,8 +52,8 @@ define(function(require, exports, module) {
                     regex: "//.*"
                 },
                 {
-                    token : "keyword.operator",
-                    regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
+                    token: "keyword.operator",
+                    regex: "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
                 }
             ]
         };
@@ -67,3 +64,19 @@ define(function(require, exports, module) {
     exports.MyNewHighlightRules = MyNewHighlightRules;
 
 });
+/*
+require(["ace/ace", "MyNewHighlightRules"], function(ace) {
+    var editor = ace.edit("editor");
+    var TextMode = require("ace/mode/text").Mode;
+    var noodleMode = new TextMode();
+    noodleMode.$id = "MyNewHighlightRules";
+    noodleMode.HighlightRules = require("MyNewHighlightRules");
+
+    editor.session.setMode(noodleMode);
+
+    noodleMode.$highlightRules.setKeywords({
+        "keywords": "person"
+    });
+    editor.session.bgTokenizer.start(0);
+});
+*/

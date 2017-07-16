@@ -152,6 +152,8 @@ var currentMarker;
 function noodle(code) {
     variables = [];
     uninitialisedVariables = [];
+    structs = [];
+    structStarted = false;
     var arrayOfLines = code.split(/\r?\n/);
     linesArray = arrayOfLines;
     var blockStack = [];
@@ -175,6 +177,7 @@ function noodle(code) {
         currentStepper = [];
         increment = [];
         shouldReturn = false;
+        variables.push(new variable("T", "null", null));
         execute(arrayOfLines, mainFunction.start - 1, mainFunction.end - 1);
     }
 }
@@ -199,6 +202,7 @@ function execute(arrayOfLines, i, endLine) {
                     whileCount.pop();
                 }
                 codeBlockStack.pop();
+                endStack.pop();
             } else {
                 return j;
             }
@@ -308,7 +312,7 @@ function editorClick() {
 }
 
 function findUnVar(varName) {
-    for (var i = 0; i < uninitialisedVariables.length; i++) {
+    for (var i = uninitialisedVariables.length - 1; i >= 0; i--) {
         if (uninitialisedVariables[i].name == varName) {
             return uninitialisedVariables[i];
         }
