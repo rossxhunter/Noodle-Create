@@ -154,6 +154,8 @@ function noodle(code) {
     uninitialisedVariables = [];
     structs = [];
     structStarted = false;
+    defineStarted = false;
+    globalLines = [];
     var arrayOfLines = code.split(/\r?\n/);
     linesArray = arrayOfLines;
     var blockStack = [];
@@ -178,6 +180,9 @@ function noodle(code) {
         increment = [];
         shouldReturn = false;
         variables.push(new variable("T", "null", null));
+        for (var i = 0; i < globalLines.length; i++) {
+            execute(arrayOfLines, globalLines[i] - 1, globalLines[i]);
+        }
         execute(arrayOfLines, mainFunction.start - 1, mainFunction.end - 1);
     }
 }

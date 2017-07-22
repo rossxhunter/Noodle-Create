@@ -83,6 +83,10 @@ function unendedBlockError(blockStack) {
             addError("Unended struct on line " + blockStack[i].line);
             addRedLine(blockStack[i].line);
             return;
+        } else if (blockStack[i].type == "define") {
+            addError("Unended define on line " + blockStack[i].line);
+            addRedLine(blockStack[i].line);
+            return;
         } else if (blockStack[i].type == "main") {
             addError("Unended main function on line " + blockStack[i].line);
             addRedLine(blockStack[i].line);
@@ -183,10 +187,13 @@ function findFunc() {
     }
 }
 
-function findFuncByName(name) {
+function findFuncByName(name, fs, lineNumber) {
     for (var i = 0; i < funcList.length; i++) {
         if (funcList[i].name == name) {
-            return funcList[i];
+            var args = findFuncInVar(funcList[i].name, fs);
+            if (getTypeOfArgs(args, funcList[i].args, lineNumber)) {
+                return funcList[i];
+            }
         }
     }
 }
@@ -204,37 +211,41 @@ function isValid(type, line) {
     switch (type) {
         case "print":
             return line.match(/^print\s+(".*"|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
-            break;
         case "printVar":
             return line.match(/^print\s+[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
-            break;
         case "var":
             return line.match(/^([a-zA-Z][a-zA-Z0-9_]*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null;
-            break;
         case "if":
             return line.match(/^(if|else\s+if|else)\s*\(.+\)\s*$/) != null;
-            break;
         case "for":
             return line.match(/^for\s*\(+\s*.*\s*\)+\s*$/) != null;
-            break;
         case "while":
             return line.match(/^(do\s+)?while\s*\(.+\)\s*$/) != null;
-            break;
         case "struct":
             return line.match(/^struct\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
-            break;
         case "member":
             return line.match(/^(int|float|string|char|bool)((\[.*\])?)?\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
-            break;
         case "func":
-            return line.match(/^func\s*(\(\s*(int|float|string|char|bool)((\[\])?)?\s*\))?\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(\s*((int|float|string|char|bool)((\[\])?)?\s+[a-zA-Z_][a-zA-Z0-9_]*(\s*,\s*(int|float|string|char|bool)((\[\])?)?\s+[a-zA-Z_][a-zA-Z0-9_]*)*)?\s*\)\s*$/) != null;
-            break;
+            var start = /^func\s*/;
+            if (validTypes == undefined) {
+                validTypes = /(int|float|string|char|bool|T)((\[\])?)?/;
+            }
+            var p1 = /\(\s*/;
+            var p2 = /\s*\)/;
+            var p3 = /\s+/;
+            var returnType = new RegExp("(" + p1.source + validTypes.source + p2.source + ")?" + p3.source);
+            var name = /[a-zA-Z_][a-zA-Z0-9_]*\s*/;
+            var param = new RegExp(validTypes.source + /\s+[a-zA-Z_][a-zA-Z0-9_]*/.source);
+            p1 = /\(\s*/;
+            p2 = /\s*,\s*/;
+            p3 = /\s*\)\s*$/;
+            var paramList = new RegExp(p1.source + "(" + param.source + "(" + p2.source + param.source + ")*)?" + p3.source);
+            var reg = new RegExp(start.source + returnType.source + name.source + paramList.source);
+            return line.match(reg) != null;
         case "return":
             return line.match(/^return\s*.*$/) != null;
-            break;
         case "returnVoid":
             return line.match(/^return\s*$/) != null;
-            break;
     }
 }
 
@@ -246,7 +257,10 @@ function isCorrectFormat(line) {
 }
 
 function isDefaultValueDeclaring(line) {
-    return (line.match(/^(int|float|string|char|bool)((\[.*\])?)?\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null);
+    var start = /^/;
+    var partAfterType = /[a-zA-Z_][a-zA-Z0-9_]*\s*$/;
+    var format = new RegExp(start.source + validTypes.source + partAfterType.source);
+    return (line.match(format) != null);
 }
 
 function isEquality(char) {
@@ -381,7 +395,7 @@ function getTypeOfSingleArg(arg, reqType, lineNumber) {
     if (!allDeclared(varList, funcs, lineNumber)) {
         return false;
     }
-    return checkTypesMatch(expList, reqType);
+    return checkTypesMatch(expList, reqType, funcs, lineNumber);
 }
 
 function argTypesMatch(name, args) {
@@ -422,7 +436,7 @@ function findFuncInVar(v, fs) {
     }
 }
 
-function getTypeOfVarsAndLits(es) {
+function getTypeOfVarsAndLits(es, fs, lineNumber) {
     var evaluatedList = [];
     for (var i = 0; i < es.length; i++) {
         if (isOperand(es[i])) {
@@ -448,7 +462,10 @@ function getTypeOfVarsAndLits(es) {
             }
             var varEntry = findUnVar(varWithoutIndex);
             if (varEntry == null) {
-                varEntry = findFuncByName(es[i]);
+                varEntry = findVar(varWithoutIndex);
+            }
+            if (varEntry == null) {
+                varEntry = findFuncByName(es[i], fs, lineNumber);
             }
             if (varEntry == null) {
                 return;

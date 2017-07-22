@@ -59,20 +59,53 @@ function getDefaultValue(varType) {
     switch (varType) {
         case "int":
             return 0;
-            break;
         case "float":
             return 0.0;
-            break;
         case "string":
             return "";
-            break;
         case "char":
             return 'a';
-            break;
         case "bool":
             return 'false';
-            break;
+        default : return getArrayOrStructDefaultValue(varType);
     }
+}
+
+function getArrayOrStructDefaultValue(varType) {
+    if (varType.match(/.*\[\]/) != null) {
+        return [];
+    }
+    else if (varType.match(/.*\[.*/) != null) {
+        var elementType = varType.substr(0, varType.indexOf("["));
+        var size = varType.substr(varType.indexOf("["));
+        size = size.substr(1, size.length - 2);
+        if (!isStructType(elementType)) {
+            var defaultArray = [];
+            for (var i = 0; i < size; i++) {
+                defaultArray.push(getDefaultValue(elementType));
+            }
+            return defaultArray;
+        }
+        else {
+            var defaultArray = [];
+            for (var i = 0; i < size; i++) {
+                defaultArray.push(getStructDefaultValue(elementType));
+            }
+            return defaultArray;
+        }
+    }
+    else {
+        return getStructDefaultValue(varType);
+    }
+}
+
+function getStructDefaultValue(varType) {
+    var types = findStruct(varType).memberTypes;
+    var defaultArray = [];
+    for (var i = 0; i < types.length; i++) {
+        defaultArray.push(getDefaultValue(types[i]));
+    }
+    return defaultArray;
 }
 
 function removeOldVar(varName) {
@@ -102,7 +135,7 @@ function isOperand(char) {
     return false;
 }
 
-function getLiteralExpList(expList, isBool) {
+function getLiteralExpList(expList, isBool, lineNumber) {
     var litExpList = [];
     for (var i = 0; i < expList.length; i++) {
         if (isOperator(expList[i]) || isOperand(expList[i]) || expList[i] == "(" || expList[i] == ")" || expList[i] == "@fc") {
@@ -110,7 +143,7 @@ function getLiteralExpList(expList, isBool) {
 
         } else if (expList[i].match(/.*\..*/) != null) {
             var structName = expList[i].substr(0, expList[i].indexOf("."))
-            var s = getVarVal(structName, isBool);
+            var s = getVarVal(structName, isBool, lineNumber);
             var type = findVar(structName).type;
             var struct = findStruct(type);
             var memberName = expList[i].substr(expList[i].indexOf(".") + 1);
@@ -118,7 +151,7 @@ function getLiteralExpList(expList, isBool) {
             litExpList.push(m);
         }
         else {
-            litExpList.push(getVarVal(expList[i], isBool));
+            litExpList.push(getVarVal(expList[i], isBool, lineNumber));
         }
     }
     return litExpList;
@@ -132,19 +165,29 @@ function getMemberVal(s, struct, m) {
     }
 }
 
-function getVarVal(v, isBool) {
+function getVarVal(v, isBool, lineNumber) {
     var varEntry;
     var val;
     if (v.match(/.*\[.*\]/) != null) {
         var varWithoutIndex = v.substr(0, v.indexOf("["));
         var index = v.substr(v.indexOf("["));
         index = index.substr(1, index.length - 2);
-        index = evaluateExpression(index, "int");
+        index = evaluateExpression(index, "int", lineNumber);
         varEntry = findVar(varWithoutIndex);
-        if (!isBool && (index < 0 || index >= varEntry.value.length)) {
-            addRuntimeError("Array index out of bounds");
+        if (varEntry.type.match(/.*\[\]/) == null) {
+            if (!isBool && (index < 0 || index >= varEntry.value.length)) {
+                addRuntimeError("Array index out of bounds");
+            }
+            val = varEntry.value[index];
         }
-        val = varEntry.value[index];
+        else {
+            if (!isBool && (index < 0 || index >= varEntry.value.length)) {
+                val = null;
+            }
+            else {
+                val = varEntry.value[index];
+            }
+        }
     }
     else {
         varEntry = findVar(v);
@@ -194,30 +237,30 @@ function castOp(op) {
     return op;
 }
 
-function getFuncReturnVal(name, args) {
-    var func = findFuncByName(name);
+function getFuncReturnVal(name, args, fs, lineNumber) {
+    var func = findFuncByName(name, fs, lineNumber);
     passedArgs = args;
     execute(linesArray, func.start - 1, func.end - 1);
     return returnV;
 }
 
-function replaceFuncsWithVals(expList, funcNames, funcs) {
+function replaceFuncsWithVals(expList, funcNames, funcs, lineNumber) {
     var j = 0;
     for (var i = 0; i < expList.length; i++) {
         if (expList[i] == "@fc") {
             var args = getArgsFromCall(funcs[j]);
-            var f = findFuncByName(funcNames[j]);
-            args = evaluateArgs(args, f.args);
-            expList[i] = getFuncReturnVal(funcNames[j], args);
+            var f = findFuncByName(funcNames[j], funcs, lineNumber);
+            args = evaluateArgs(args, f.args, lineNumber);
+            expList[i] = getFuncReturnVal(funcNames[j], args, funcs, lineNumber);
             j += 1;
         }
     }
     return expList;
 }
 
-function evaluateArgs(args, reqArgs) {
+function evaluateArgs(args, reqArgs, lineNumber) {
     for (var i = 0; i < args.length; i++) {
-        args[i] = evaluateExpression(args[i], reqArgs[i].type);
+        args[i] = evaluateExpression(args[i], reqArgs[i].type, lineNumber);
     }
     return args;
 }
@@ -302,12 +345,17 @@ function checkArrayLength(len, line) {
 
 function getNewArray(array, index, value) {
     var newArray = [];
-    for (var i = 0; i < array.length; i++) {
+    for (var i = 0; i <= index; i++) {
         if (i == index) {
             newArray.push(value);
         }
         else {
-            newArray.push(array[i]);
+            if (array[i] == undefined) {
+                newArray.push(null);
+            }
+            else {
+                newArray.push(array[i]);
+            }
         }
     }
     return newArray;

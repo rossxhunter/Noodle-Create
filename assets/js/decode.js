@@ -43,7 +43,7 @@ function decode(line, lineNumber) {
         } else if (line.match(/^([a-zA-Z][a-zA-Z0-9_]*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null) {
             decodeVarAss(line, lineNumber + 1);
         } else if (line.search(/if\s*\(/) == 0) {
-            shouldSkip = !decodeIf(line);
+            shouldSkip = !decodeIf(line, lineNumber);
             satisfied = !shouldSkip;
             codeBlockStack.push("if");
         } else if (line.search(/else\s+if\s*\(/) == 0) {
@@ -60,7 +60,7 @@ function decode(line, lineNumber) {
             finishStack.push(true);
             codeBlockStack.push("for");
         } else if (line.match(/(do\s+)?while\s*\(/) != null) {
-            shouldSkip = !decodeWhile(line);
+            shouldSkip = !decodeWhile(line, lineNumber);
             endStack.push(false);
             codeBlockStack.push("while");
             if (firstWhile(lineNumber)) {
@@ -111,7 +111,7 @@ function decode(line, lineNumber) {
     } else if (line.search(/if\s*\(/) == 0) {
         codeBlockStack.push("if");
     } else if (line.search(/else\s+if\s*\(/) == 0) {
-        shouldSkip = !decodeIf(line);
+        shouldSkip = !decodeIf(line, lineNumber);
         satisfied = !shouldSkip;
         codeBlockStack.pop();
         codeBlockStack.push("else if");
@@ -128,12 +128,23 @@ function decodePrint(line, lineNumber) {
         if (output.match(/.*\[.*\]/) != null) {
             var varWithoutIndex = output.substr(0, output.indexOf("["));
             var index = output.substr(output.indexOf("["));
-            index = evaluateExpression(index.substr(1, index.length - 2));
+            index = evaluateExpression(index.substr(1, index.length - 2), "int", lineNumber);
             var array = findVar(varWithoutIndex).value;
-            if (index >= array.length) {
+            var v = findVar(varWithoutIndex);
+            if (v.type.match(/.*\[\]/) == null && index >= array.length) {
                 addRuntimeError("Array index out of bounds on line " + lineNumber);
             }
-            output = array[index];
+            if (v.type.match(/.*\[\]/) == null) {
+                output = array[index];
+            }
+            else {
+                if (array[index] == undefined || array[index] == null) {
+                    output = "null";
+                }
+                else {
+                    output = array[index];
+                }
+            }
         } else if (output.match(/.*\..*/) != null) {
             var s = output.substr(0, output.indexOf("."));
             var v = findVar(s);
@@ -167,12 +178,23 @@ function decodePrint(line, lineNumber) {
                     var varWithoutIndex = varName.substr(0, varName.indexOf("["));
                     var index = varName.substr(varName.indexOf("["));
                     index = index.substr(1, index.length - 2);
-                    index = evaluateExpression(index, "int");
+                    index = evaluateExpression(index, "int", lineNumber);
                     var array = findVar(varWithoutIndex).value;
-                    if (index >= array.length) {
+                    var v = findVar(varWithoutIndex);
+                    if (v.type.match(/.*\[\]/) == null && index >= array.length) {
                         addRuntimeError("Array index out of bounds on line " + lineNumber);
                     }
-                    var varValue = array[index];
+                    if (v.type.match(/.*\[\]/) == null) {
+                        var varValue = array[index];
+                    }
+                    else {
+                        if (array[index] == undefined || array[index] == null) {
+                            var varValue = "null";
+                        }
+                        else {
+                            var varValue = array[index];
+                        }
+                    }
                 } else if (varName.match(/.*\..*/) != null) {
                     var s = varName.substr(0, varName.indexOf("."));
                     var v = findVar(s);
@@ -228,15 +250,24 @@ function decodeVarDec(line, lineNumber) {
     if (varType.match(/.*\[/) != null) {
         var arrayLength = varType.substr(varType.indexOf("["));
         arrayLength = arrayLength.substr(1, arrayLength.length - 2);
-        arrayLength = evaluateExpression(arrayLength, "int");
-        checkArrayLength(arrayLength, lineNumber);
+        if (arrayLength == "") {
+            arrayLength = 0;
+        }
+        else {
+            arrayLength = evaluateExpression(arrayLength, "int", lineNumber);
+            checkArrayLength(arrayLength, lineNumber);
+        }
         if (varValue != null) {
             if (varValue.match(/\[.*/) != null) {
-                varValue = createArray(varValue, arrayLength, lineNumber);
+                var arrayType = varType.substr(0, varType.indexOf("["));
+                varValue = createArray(varValue, arrayType, arrayLength, lineNumber);
             }
             else {
-                varValue = evaluateExpression(varValue, varType);
+                varValue = evaluateExpression(varValue, varType, lineNumber);
             }
+        }
+        else {
+            varValue = getDefaultValue(varType);
         }
     } else {
         if (varValue != null) {
@@ -244,7 +275,7 @@ function decodeVarDec(line, lineNumber) {
                 varValue = decodeStruct(varType, varName, varValue, lineNumber);
             }
             else {
-                varValue = evaluateExpression(varValue, varType);
+                varValue = evaluateExpression(varValue, varType, lineNumber);
                 varValue = removeSpacesAndParseType(varValue, varType);
             }
         } else {
@@ -264,21 +295,21 @@ function decodeStruct(varType, varName, varValue, lineNumber) {
     var mems = varValue.split(",");
     var struct = findStruct(varType);
     for (var i = 0; i < mems.length; i++) {
-        mems[i] = evaluateExpression(mems[i], struct.memberTypes[i]);
+        mems[i] = evaluateExpression(mems[i], struct.memberTypes[i], lineNumber);
     }
     return mems;
 }
 
-function createArray(array, length, line) {
+function createArray(array, type, length, line) {
     array = array.substr(1, array.length - 2);
     array = array.split(/,/);
-    if (array.length != length) {
+    if (length != 0 && array.length != length) {
         addRuntimeError("Expected " + length + " elements in array but got " + array.length + " on line " + line);
         return;
     }
     var retArray = []
     for (var i = 0; i < array.length; i++) {
-        retArray.push(evaluateExpression(array[i]));
+        retArray.push(evaluateExpression(array[i], type, line));
     }
     return retArray;
 }
@@ -291,14 +322,14 @@ function decodeVarAss(line, lineNumber) {
         var varWithoutIndex = varName.substr(0, varName.indexOf("["));
         var index = varName.substr(varName.indexOf("["));
         index = index.substr(1, index.length - 2);
-        index = evaluateExpression(index, "int");
+        index = evaluateExpression(index, "int", lineNumber);
         var oldVar = findVar(varWithoutIndex);
-        if (index >= oldVar.value.length) {
+        if (oldVar.type.match(/.*\[\]/) == null && index >= oldVar.value.length) {
             addRuntimeError("Array index out of bounds on line " + lineNumber);
         }
         var varType = findVar(varWithoutIndex).type;
         varType = varType.substr(0, varType.indexOf("["));
-        varValue = evaluateExpression(varValue, varType);
+        varValue = evaluateExpression(varValue, varType, lineNumber);
         varValue = removeSpacesAndParseType(varValue, varType);
         var oldVarValue = oldVar.value;
         oldVarValue = getNewArray(oldVarValue, index, varValue);
@@ -321,7 +352,7 @@ function decodeVarAss(line, lineNumber) {
         if (varType.match(/.*\[/) != null) {
             var arrayLength = varType.substr(varType.indexOf("["));
             arrayLength = arrayLength.substr(1, arrayLength.length - 2);
-            arrayLength = evaluateExpression(arrayLength, "int");
+            arrayLength = evaluateExpression(arrayLength, "int", lineNumber);
             checkArrayLength(arrayLength, lineNumber);
             if (varValue != null) {
                 varValue = createArray(varValue, arrayLength, lineNumber);
@@ -332,7 +363,7 @@ function decodeVarAss(line, lineNumber) {
                     varValue = decodeStruct(varType, varName, varValue, lineNumber);
                 }
                 else {
-                    varValue = evaluateExpression(varValue, varType);
+                    varValue = evaluateExpression(varValue, varType, lineNumber);
                     varValue = removeSpacesAndParseType(varValue, varType);
                 }
             } else {
@@ -353,9 +384,9 @@ function decodeVarAss(line, lineNumber) {
 
 }
 
-function decodeIf(line) {
+function decodeIf(line, lineNumber) {
     var pred = line.substr(line.indexOf("("));
-    var evaluatedPred = evaluateExpression(pred, "bool");
+    var evaluatedPred = evaluateExpression(pred, "bool", lineNumber);
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
     document.getElementById('noodleOutputBox').value += evaluatedPred;
     return evaluatedPred;
@@ -367,24 +398,24 @@ function decodeFor(line) {
     loopParts = removeSpaces(loopParts);
     if (loopParts.length == 1) {
         currentStepper.push(0);
-        target.push(evaluateExpression(loopParts[0], "int"));
+        target.push(evaluateExpression(loopParts[0], "int", lineNumber));
         increment.push(1);
         stepperVar.push("");
     } else if (loopParts.length == 2) {
         currentStepper.push(0);
         var end = loopParts[1].substr(0, loopParts[1].length - 1);
         end = getTargetAndEquality(end);
-        end = evaluateExpression(end, "int");
+        end = evaluateExpression(end, "int", lineNumber);
         target.push(end);
         increment.push(1);
         stepperVar.push(loopParts[0].replace(/\(/, ''));
         variables.push(new variable("int", loopParts[0].substr(1, loopParts[0].length - 1), 0));
     } else if (loopParts.length == 3) {
         stepperVar.push(loopParts[0].replace(/\(/, ''));
-        var start = evaluateExpression(loopParts[1], "int");
+        var start = evaluateExpression(loopParts[1], "int", lineNumber);
         var end = loopParts[2].substr(0, loopParts[2].length - 1);
         end = getTargetAndEquality(end);
-        end = evaluateExpression(end, "int");
+        end = evaluateExpression(end, "int", lineNumber);
         currentStepper.push(start);
         target.push(end);
         if (parseInt(start) <= parseInt(end)) {
@@ -394,22 +425,22 @@ function decodeFor(line) {
         }
         variables.push(new variable("int", loopParts[0].substr(1, loopParts[0].length - 1), parseInt(start)));
     } else {
-        var start = evaluateExpression(loopParts[1], "int");
+        var start = evaluateExpression(loopParts[1], "int", lineNumber);
         currentStepper.push(start);
         var end = loopParts[2];
         end = getTargetAndEquality(end);
-        end = evaluateExpression(end, "int");
+        end = evaluateExpression(end, "int", lineNumber);
         target.push(end);
-        var inc = evaluateExpression(loopParts[3].substr(0, loopParts[3].length - 1), "int");
+        var inc = evaluateExpression(loopParts[3].substr(0, loopParts[3].length - 1), "int", lineNumber);
         increment.push(inc);
         stepperVar.push(loopParts[0].replace(/\(/, ''));
         variables.push(new variable("int", loopParts[0].substr(1, loopParts[0].length - 1), parseInt(start)));
     }
 }
 
-function decodeWhile(line) {
+function decodeWhile(line, lineNumber) {
     var pred = line.substr(line.indexOf("("));
-    var evaluatedPred = evaluateExpression(pred, "bool");
+    var evaluatedPred = evaluateExpression(pred, "bool", lineNumber);
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
     document.getElementById('noodleOutputBox').value += evaluatedPred;
     return evaluatedPred;
@@ -423,13 +454,13 @@ function decodeFunc(line) {
 function decodeReturn(line, lineNumber) {
     var returnValue = line.substr(line.indexOf("n") + 1).trim();
     var func = findFuncByLine(lineNumber + 1);
-    returnValue = evaluateExpression(returnValue, func.type);
+    returnValue = evaluateExpression(returnValue, func.type, lineNumber);
     returnValue = removeSpacesAndParseType(returnValue, func.type);
     returnV = returnValue;
     shouldReturn = true;
 }
 
-function evaluateExpression(exp, type) {
+function evaluateExpression(exp, type, lineNumber) {
     var funcs = exp.match(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)/g);
     if (funcs == null) {
         funcs = [];
@@ -448,9 +479,8 @@ function evaluateExpression(exp, type) {
     expList = removeBlankEntries(expList);
     expList = putArraysBackInExpList(expList, arrays);
     expList = getNegativesAndSubraction(expList);
-
-    var literalExpList = getLiteralExpList(expList, type == "bool");
-    literalExpList = replaceFuncsWithVals(literalExpList, funcNames, funcs);
+    var literalExpList = getLiteralExpList(expList, type == "bool", lineNumber);
+    literalExpList = replaceFuncsWithVals(literalExpList, funcNames, funcs, lineNumber);
     if (literalExpList.length == 1) {
         return literalExpList[0];
     }

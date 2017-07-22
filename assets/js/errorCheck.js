@@ -6,8 +6,10 @@ var funcList = [];
 var uninitialisedVariables = [];
 var structs = [];
 var mainFunction;
-var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do", "null", "T", "struct"];
+var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do", "null", "T", "struct", "define"];
 var structStarted = false;
+var defineStarted = false;
+var globalLines = [];
 var validTypes;
 var validTypesWithoutArrays;
 
@@ -16,6 +18,7 @@ var validTypesWithoutArrays;
 function errorCheck(arrayOfLines, blockStack) {
     uninitialisedVariables.push(new uninitialisedVariable("T", "null", 1, 0, arrayOfLines.length));
     document.getElementById('noodleOutputBox').value = "";
+    getStructs(arrayOfLines);
     var initialCorrect = true;
     for (var i = 0; i < arrayOfLines.length; i++) {
         var line = i + 1;
@@ -76,6 +79,12 @@ function errorCheck(arrayOfLines, blockStack) {
                 initialCorrect = false;
             }
             blockStack.push(new codeBlock("struct", i + 1));
+        } else if (arrayOfLines[i].trim().search(/define/) == 0) {
+            if (blockStack.length != 0) {
+                addError("Unexpected define on line " + line);
+                initialCorrect = false;
+            }
+            blockStack.push(new codeBlock("define", i + 1));
         } else if (arrayOfLines[i].replace(/^\s+/, '').search(/do\s+while\s*\(/) == 0) {
             var precedingBlock = blockStack.pop();
             if (precedingBlock == "struct") {
@@ -88,8 +97,7 @@ function errorCheck(arrayOfLines, blockStack) {
                 addError("Unexpected return statement on line " + line);
                 initialCorrect = false;
             }
-            var precedingBlock = blockStack.pop();
-            if (precedingBlock == "struct") {
+            if (blockStack[blockStack.length - 1] == "struct") {
                 addError("Cannot put return statement in a struct on line " + line);
                 initialCorrect = false;
             }
@@ -117,17 +125,6 @@ function errorCheck(arrayOfLines, blockStack) {
         addError("Cannot find main function");
         return false;
     }
-    var primTypes = /(int|float|string|char|bool)/;
-    var structTypes = getStructTypes();
-    var allTypes = primTypes;
-    if (structTypes != null) {
-        var sep = /|/;
-        allTypes = new RegExp(primTypes.source.replace(")", '') + sep.source + structTypes.source + ")");
-    }
-    validTypesWithoutArrays = allTypes;
-    var arrayRegex = /((\[.*\])?)?\s+/;
-    var allTypesWithArrays = new RegExp(allTypes.source + arrayRegex.source);
-    validTypes = allTypesWithArrays;
     var isCorrect = true;
     for (var i = 0; i < arrayOfLines.length; i++) {
         isCorrect = isCorrect && checkLine(arrayOfLines[i].replace(/^\s+/, ''), i + 1);
@@ -135,9 +132,36 @@ function errorCheck(arrayOfLines, blockStack) {
     return isCorrect;
 }
 
+function getStructs(lines) {
+    var structList = "";
+    for (var i = 0; i < lines.length; i++) {
+        if (lines[i].trim().search(/struct\s+.*/) == 0) {
+            if (i != 0) {
+                structList += "|";
+            }
+            var structName = lines[i].substr(lines[i].indexOf(" ")).trim();
+            structList += structName;
+        }
+    }
+    var primTypes = /(int|float|string|char|bool|T)/;
+    var allTypes = primTypes;
+    if (structList != "") {
+        var sep = /|/;
+        allTypes = new RegExp(primTypes.source.replace(")", '') + sep.source + structList + ")");
+    }
+    validTypesWithoutArrays = allTypes;
+    var arrayRegex = /((\[.*\])?)?\s*/;
+    var allTypesWithArrays = new RegExp(allTypes.source + arrayRegex.source);
+    validTypes = allTypesWithArrays;
+}
+
 function checkLine(line, lineNumber) {
     var isCorrect = true;
     var error = "";
+    if (defineStarted && line.search(validTypes) != 0 && line.trim().match(/^end$/) == null) {
+        addError("Invalid global variable on line " + lineNumber);
+        isCorrect = false;
+    }
     if (line.search("print ") == 0) {
         isCorrect = checkPrint(line, lineNumber);
     } else if (line.search(validTypes) == 0) {
@@ -162,8 +186,12 @@ function checkLine(line, lineNumber) {
         }
         currentLevel += 1;
         structStarted = true;
+    } else if (line.trim().search(/^define$/) == 0) {
+        currentLevel += 1;
+        defineStarted = true;
     } else if (line.replace(/\s/g, '').match(/^end$/) != null) {
         structStarted = false;
+        defineStarted = false;
         if (currentLevel == 1) {
             var reqFunc = findFuncByLine(lineNumber);
             if (reqFunc != null) {
@@ -361,7 +389,12 @@ function checkVarDec(line, lineNumber) {
                         addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                         return false;
                     }
-                    uninitialisedVariables.push(new uninitialisedVariable(varType, varName, lineNumber, currentLevel, 0));
+                    if (!defineStarted) {
+                        uninitialisedVariables.push(new uninitialisedVariable(varType, varName, lineNumber, currentLevel, 0));
+                    } else {
+                        uninitialisedVariables.push(new uninitialisedVariable(varType, varName, lineNumber, 0, 0));
+                        globalLines.push(lineNumber);
+                    }
                 } else {
                     if (!checkBrackets(varValue, varType)) {
                         addError("Syntax error on line " + lineNumber + ". Possibly mismatched brackets or unexpected character");
@@ -391,22 +424,26 @@ function checkVarDecArray(line, lineNumber) {
     var varType = varTypeWithLength.substr(0, varTypeWithLength.indexOf("["));
     var arrayLength = varTypeWithLength.substr(varTypeWithLength.indexOf("["));
     arrayLength = arrayLength.substr(1, arrayLength.length - 2).replace(/\s/g, '');
-    if (!checkBrackets(arrayLength, "int")) {
-        addError("Invalid array length on line " + lineNumber);
-        return false;
-    }
-    if (!checkReturnType(arrayLength, "int", lineNumber)) {
-        addError("Invalid array length on line " + lineNumber);
-        return false;
+    if (arrayLength != "") {
+        if (!checkBrackets(arrayLength, "int")) {
+            addError("Invalid array length on line " + lineNumber);
+            return false;
+        }
+        if (!checkReturnType(arrayLength, "int", lineNumber)) {
+            addError("Invalid array length on line " + lineNumber);
+            return false;
+        }
     }
     if (!checkVariableAssignment("", varName, "", true, lineNumber)) {
         addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
         return false;
     }
-    var varValue = lineWithoutType.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
-    if (!isDefaultValueDeclaring(line) && varValue.match(/\[.*/) != null) {
-        if (!checkArrayAssignment(varValue, varTypeWithoutLength, lineNumber)) {
-            return false;
+    if (!isDefaultValueDeclaring(line)) {
+        var varValue = lineWithoutType.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
+        if (varValue.match(/\[.*/) != null) {
+            if (!checkArrayAssignment(varValue, varTypeWithoutLength, lineNumber)) {
+                return false;
+            }
         }
     }
     uninitialisedVariables.push(new uninitialisedVariable(varTypeWithLength, varName, lineNumber, currentLevel, 0));
@@ -517,8 +554,7 @@ function checkVarAss(line, lineNumber) {
                     addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                     return false;
                 }
-            }
-            else {
+            } else {
                 if (!checkVariableAssignment(varType, varName, varValue, false, lineNumber)) {
                     addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                     return false;
@@ -582,6 +618,10 @@ function checkFor(line, lineNumber) {
         }
         var varEntry = findUnVar(stepName);
         if (varEntry != null && varEntry.end == 0) {
+            if (varEntry.level == 0) {
+                addError("Stepper variable already in use on line " + lineNumber);
+                return false;
+            }
             var f = findFuncByLine(lineNumber);
             var start = findFuncByLine(varEntry.start).start;
             if (f.start == start) {
@@ -721,7 +761,10 @@ function checkFunc(line, lineNumber) {
     var type = "void";
     var name;
     if (line.search(/func\s+[a-zA-Z_]/) != 0) {
-        type = line.match(/\(\s*(int|float|string|char|bool)((\[\])?)?\s*\)/)[0];
+        var typeStart = /\(\s*/;
+        var typeEnd = /\s*\)/;
+        var typeRegex = new RegExp(typeStart.source + validTypes.source + typeEnd.source);
+        type = line.match(typeRegex)[0];
         type = type.replace(")", '');
         type = type.replace("(", '');
         name = line.substr(line.indexOf(")"));
@@ -799,7 +842,7 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
     if ((pred.match(/\(/g) || []).length != (pred.match(/\)/g) || []).length) {
         return false;
     }
-    var varTypes = getTypeOfVarsAndLits(varList);
+    var varTypes = getTypeOfVarsAndLits(varList, funcs, lineNumber);
     var newExp = pred.replace(/\(*(true|false)\)*/g, '{');
     newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(.*?\)/g, '}');
     newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*((\[.*?\])?)?/g, '@v');
@@ -839,7 +882,7 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
         }
     }
     for (var i = 0; i < funcs.length; i++) {
-        var f = findFuncByName(funcNames[i]);
+        var f = findFuncByName(funcNames[i], funcs, lineNumber);
         switch (f.type) {
             case "int":
                 newExp = newExp.replace(/\@p/, '@i');
@@ -1024,7 +1067,7 @@ function checkReturnType(exp, type, lineNumber) {
     if (!allDeclared(varList, funcs, lineNumber)) {
         return false;
     }
-    if (!checkTypesMatch(expList, type)) {
+    if (!checkTypesMatch(expList, type, funcs, lineNumber)) {
         return false;
     }
     if (type == "string") {
@@ -1038,12 +1081,14 @@ function checkReturnType(exp, type, lineNumber) {
 }
 
 function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNumber) {
-
     var varEntry = findUnVar(varName);
     if (varEntry == null && !isDeclaring) {
         return false;
     }
     if (varEntry != null && isDeclaring) {
+        if (varEntry.level == 0) {
+            return false;
+        }
         var f = findFuncByLine(lineNumber);
         var start = findFuncByLine(varEntry.start).start;
         if (f.start == start) {
@@ -1071,11 +1116,16 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
         return false;
     }
     if (varName != "" && varType != "" && isDeclaring) {
-        var newVar = new uninitialisedVariable(varType, varName, lineNumber, currentLevel, 0);
+        if (defineStarted) {
+            var newVar = new uninitialisedVariable(varType, varName, lineNumber, 0, 0);
+            globalLines.push(lineNumber);
+        } else {
+            var newVar = new uninitialisedVariable(varType, varName, lineNumber, currentLevel, 0);
+        }
         uninitialisedVariables.push(newVar);
         varEntry = newVar;
     }
-    if (!checkTypesMatch(expList, varType)) {
+    if (!checkTypesMatch(expList, varType, funcs, lineNumber)) {
         return false;
     }
     if (varType == "string") {
@@ -1089,10 +1139,16 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     return true;
 }
 
-function checkTypesMatch(expList, type) {
-    var typeList = getTypeOfVarsAndLits(expList);
+function checkTypesMatch(expList, type, fs, lineNumber) {
+    var typeList = getTypeOfVarsAndLits(expList, fs, lineNumber);
     typeList = removeArrayLengths(typeList);
     for (var i = 0; i < typeList.length; i++) {
+        if (type == "T" && typeList[i].match(/.*\[\]/) == null) {
+            return true;
+        }
+        else if (type == "T[]" && typeList[i].match(/.*\[\]/) != null) {
+            return true;
+        }
         if (typeList[i] == "float") {
             if (type != "float") {
                 return false;
@@ -1124,7 +1180,9 @@ function checkTypesMatch(expList, type) {
                 return false;
             }
         } else {
-            return false;
+            if (typeList[i] != type) {
+                return false;
+            }
         }
     }
     return true;
@@ -1160,26 +1218,33 @@ function allDeclared(vs, fs, lineNumber) {
         }
         var v = findUnVar(varWithoutIndex);
         if (v == null) {
-            v = findFuncByName(vs[i]);
+            v = findVar(varWithoutIndex);
+        }
+        if (v == null) {
+
+            v = findFuncByName(vs[i], fs, lineNumber);
             if (v == null) {
                 return false;
             }
             var args = findFuncInVar(v.name, fs);
-            if (!getTypeOfArgs(args, v.args, lineNumber)) {
-                addError("Incorrect arguments types for function on line " + lineNumber);
-                return false;
-            }
             if (args == null) {
                 addError("Undeclared variable(s) on line " + lineNumber);
                 return false;
             }
+            if (getTypeOfArgs(args, v.args, lineNumber)) {
+                functionFound = true;
+            }
+
+
         } else {
             var f = findFuncByLine(lineNumber);
             var varFunc = findFuncByLine(v.start);
-            if (v.name != "null" && ((v.end < lineNumber && v.end != 0 && findFuncByName(v) != null) || f.start != varFunc.start)) {
+            /*
+            if (v.name != "null" && ((v.end < lineNumber && v.end != 0 && findFuncByName(v, fs, lineNumber) != null) || (varFunc != null && f.start != varFunc.start))) {
                 addError("Variable out of scope on line " + lineNumber);
                 return false;
             }
+            */
         }
     }
     return true;
