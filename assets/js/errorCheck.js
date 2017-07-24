@@ -213,6 +213,8 @@ function checkLine(line, lineNumber) {
         var args = getArgs(line);
         addArgsToVars(args, lineNumber);
         //isCorrect = checkFunc(line, lineNumber);
+    } else if (line.trim().search(/^.*\(.*\)$/) == 0) {
+        isCorrect = checkFuncCall(line, lineNumber);
     } else if (line.match(/^(return|return\s.*)$/) != null) {
         isCorrect = checkReturn(line, lineNumber);
     } else {
@@ -499,7 +501,11 @@ function checkVarAss(line, lineNumber) {
             return false;
         }
         var arrayType = variable.type;
-        var arrayEntryType = arrayType.substr(0, arrayType.indexOf("["));
+        if (arrayType != "string") {
+            var arrayEntryType = arrayType.substr(0, arrayType.indexOf("["));
+        } else {
+            arrayEntryType = arrayType;
+        }
 
         if (arrayEntryType == "bool") {
             if (!checkPredicate(varNameWithoutIndex, varValue, lineNumber, false, false)) {
@@ -783,6 +789,19 @@ function checkFunc(line, lineNumber) {
         return false;
     }
     funcList.push(new func(name, type, lineNumber, 0, args, false));
+    return true;
+}
+
+function checkFuncCall(line, lineNumber) {
+    if (!isValid("funcCall", line)) {
+        addError("Invalid function call on line " + lineNumber);
+        return false;
+    }
+    var funcName = line.substr(0, line.indexOf("("));
+    if (!allDeclared([funcName], [line], lineNumber)) {
+        addError("Invalid function call on line " + lineNumber);
+        return false;
+    }
     return true;
 }
 
@@ -1145,8 +1164,7 @@ function checkTypesMatch(expList, type, fs, lineNumber) {
     for (var i = 0; i < typeList.length; i++) {
         if (type == "T" && typeList[i].match(/.*\[\]/) == null) {
             return true;
-        }
-        else if (type == "T[]" && typeList[i].match(/.*\[\]/) != null) {
+        } else if (type == "T[]" && typeList[i].match(/.*\[\]/) != null) {
             return true;
         }
         if (typeList[i] == "float") {
@@ -1169,7 +1187,7 @@ function checkTypesMatch(expList, type, fs, lineNumber) {
             if (type != "char" && type != "string") {
                 return false;
             }
-            if (expList[i].match(/^('(.|\\n)'|[a-zA-Z_][a-zA-Z0-9_]*)$/) == null) {
+            if (expList[i].match(/^('(.|\\n)'|[a-zA-Z_][a-zA-Z0-9_]*(\[.*\])?)$/) == null) {
                 return false;
             }
         } else if (typeList[i] == "void") {
@@ -1221,7 +1239,6 @@ function allDeclared(vs, fs, lineNumber) {
             v = findVar(varWithoutIndex);
         }
         if (v == null) {
-
             v = findFuncByName(vs[i], fs, lineNumber);
             if (v == null) {
                 return false;

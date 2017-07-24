@@ -55,7 +55,7 @@ function decode(line, lineNumber) {
             codeBlockStack.pop();
             codeBlockStack.push("else");
         } else if (line.match(/for\s*\(/) != null) {
-            decodeFor(line);
+            decodeFor(line, lineNumber);
             endStack.push(false);
             finishStack.push(true);
             codeBlockStack.push("for");
@@ -78,6 +78,8 @@ function decode(line, lineNumber) {
 
         } else if (line.replace(/^\s+/, '').search(/func(\s*\(|\s)/) == 0) {
             decodeFunc(line);
+        } else if (line.trim().search(/^.*\(.*\)$/) == 0) {
+            decodeFuncCall(line, lineNumber);
         } else if (line.trim().match(/^end$/) != null) {
             if (codeBlockStack[codeBlockStack.length - 1] == "for") {
                 endStack.pop();
@@ -328,15 +330,27 @@ function decodeVarAss(line, lineNumber) {
             addRuntimeError("Array index out of bounds on line " + lineNumber);
         }
         var varType = findVar(varWithoutIndex).type;
-        varType = varType.substr(0, varType.indexOf("["));
+        var isString = false
+        if (varType == "string") {
+            varType = "char";
+            isString = true;
+        }
+        else {
+            varType = varType.substr(0, varType.indexOf("["));
+        }
         varValue = evaluateExpression(varValue, varType, lineNumber);
         varValue = removeSpacesAndParseType(varValue, varType);
         var oldVarValue = oldVar.value;
-        oldVarValue = getNewArray(oldVarValue, index, varValue);
+        if (isString) {
+            oldVarValue= oldVarValue.replaceAt(index, varValue);
+        }
+        else {
+            oldVarValue[index] = varValue;
+        }
         updateVarVal(varWithoutIndex, oldVarValue);
         var newVar = findVar(varWithoutIndex);
-        document.getElementById('noodleOutputBox').value += oldVar.name + index;
-        document.getElementById('noodleOutputBox').value += oldVar.value[index];
+        document.getElementById('noodleOutputBox').value += newVar.name + index;
+        document.getElementById('noodleOutputBox').value += newVar.value[index];
     } else {
         if (varName.match(/.*\..*/) != null) {
             var m = varName.substr(varName.indexOf(".") + 1);
@@ -392,7 +406,7 @@ function decodeIf(line, lineNumber) {
     return evaluatedPred;
 }
 
-function decodeFor(line) {
+function decodeFor(line, lineNumber) {
     var loopCond = line.substr(line.indexOf("("));
     var loopParts = loopCond.split(/,/g);
     loopParts = removeSpaces(loopParts);
@@ -451,6 +465,10 @@ function decodeFunc(line) {
     addArgsToDecodeVars(args);
 }
 
+function decodeFuncCall(line, lineNumber) {
+    evaluateExpression(line, "void", lineNumber);
+}
+
 function decodeReturn(line, lineNumber) {
     var returnValue = line.substr(line.indexOf("n") + 1).trim();
     var func = findFuncByLine(lineNumber + 1);
@@ -480,15 +498,29 @@ function evaluateExpression(exp, type, lineNumber) {
     expList = putArraysBackInExpList(expList, arrays);
     expList = getNegativesAndSubraction(expList);
     var literalExpList = getLiteralExpList(expList, type == "bool", lineNumber);
+
     literalExpList = replaceFuncsWithVals(literalExpList, funcNames, funcs, lineNumber);
     if (literalExpList.length == 1) {
-        return literalExpList[0];
+        var res = literalExpList[0];
+        if (type == "string") {
+            res = removeQuotes(res);
+            res = replaceEscapes(res);
+        } else if (type == "char") {
+            res = removeQuotes(res);
+            if (res == "\\n") {
+                res = '\n';
+            }
+        }
+        return res;
     }
     var i = 0;
     var operandStack = [];
     var operatorStack = [];
     while (i < literalExpList.length) {
         if (isOperand(literalExpList[i])) {
+            if (literalExpList[i] != null && literalExpList[i].toString().match(/\".*\"/) != null) {
+                literalExpList[i] = removeQuotes(literalExpList[i]);
+            }
             operandStack.push(literalExpList[i]);
         } else if (literalExpList[i] == "(") {
             operatorStack.push(literalExpList[i]);
@@ -516,6 +548,7 @@ function evaluateExpression(exp, type, lineNumber) {
                 op1 = operandStack.pop();
                 op2 = operandStack.pop();
                 op1 = castOp(op1);
+
                 op2 = castOp(op2);
                 if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
@@ -549,14 +582,13 @@ function evaluateExpression(exp, type, lineNumber) {
     }
     result = operandStack.pop();
     if (type == "string") {
-        result = result.substr(1, result.length - 2);
         result = replaceEscapes(result);
     } else if (type == "char") {
-        result = result.substr(1, result.length - 2);
         if (result == "\\n") {
             result = '\n';
         }
     }
+
     return result;
 }
 
@@ -582,12 +614,12 @@ function evaluateSingleExpression(op, op1, op2, type) {
             case "*":
                 return op1 * op2;
         }
-    } else if (type == "string") {
+    } else if (type == "string" || type == "char") {
         op1 = op1.replace(/(\"|\')/g, '');
         op2 = op2.replace(/(\"|\')/g, '');
         switch (op) {
             case "+":
-                return "\"".concat(op2).concat(op1).concat("\"");
+                return op2.concat(op1);
         }
     } else if (type == "bool") {
         op1 = (op1 == "true") || (op1 == true);
@@ -602,6 +634,12 @@ function evaluateSingleExpression(op, op1, op2, type) {
         if (op1 != null && getTypeOfVarsAndLits([op1.toString()]) == "string") {
             op1 = op1.replace(/(\"|\')/g, '');
             op2 = op2.replace(/(\"|\')/g, '');
+        }
+        if (op1 == "\"undefined\"") {
+            op1 = null;
+        }
+        if (op2 == "\"undefined\"") {
+            op2 = null;
         }
         switch (op) {
             case "==":

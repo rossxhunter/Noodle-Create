@@ -242,6 +242,14 @@ function isValid(type, line) {
             var paramList = new RegExp(p1.source + "(" + param.source + "(" + p2.source + param.source + ")*)?" + p3.source);
             var reg = new RegExp(start.source + returnType.source + name.source + paramList.source);
             return line.match(reg) != null;
+        case "funcCall":
+            var param = new RegExp(/[a-zA-Z_][a-zA-Z0-9_]*/.source);
+            var p1 = /\(\s*/;
+            var p2 = /\s*,\s*/;
+            var p3 = /\s*\)\s*$/;
+            var paramList = new RegExp(p1.source + "(" + param.source + "(" + p2.source + param.source + ")*)?" + p3.source);
+            var reg = new RegExp(/^[a-zA-Z_][a-zA-Z0-9_]*/.source + paramList.source);
+            return line.match(reg) != null;
         case "return":
             return line.match(/^return\s*.*$/) != null;
         case "returnVoid":
@@ -472,9 +480,12 @@ function getTypeOfVarsAndLits(es, fs, lineNumber) {
             }
             var type = varEntry.type;
             if (es[i].match(/.*\[.*\]/) != null) {
-                type = type.substr(0, type.indexOf("["));
-            }
-            else if (es[i].match(/.*\..*/) != null) {
+                if (type == "string") {
+                    type = "char";
+                } else {
+                    type = type.substr(0, type.indexOf("["));
+                }
+            } else if (es[i].match(/.*\..*/) != null) {
                 var m = es[i].substr(es[i].indexOf(".") + 1);
                 type = getMemberType(varWithoutIndex, m);
             }
@@ -526,8 +537,7 @@ function getStructTypes() {
     var types;
     if (structs.length == 0) {
         return null;
-    }
-    else {
+    } else {
         types = new RegExp(structs[0].name);
     }
     var types;
