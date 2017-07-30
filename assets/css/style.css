@@ -2,19 +2,22 @@ body {
     max-width: 100%;
     margin: 0;
     overflow-x: hidden;
+    height: 100%;
 }
 
 html {
     overflow-x: hidden;
     height: 100%;
+    margin: 0;
 }
 
 a {
     text-decoration: none;
 }
 
-#bodyDiv {
-    float: left;
+@font-face {
+    font-family: "Bebas";
+    src: url("BebasNeue.otf");
 }
 
 #logo {
@@ -64,6 +67,28 @@ textarea {
     visibility: visible;
 }
 
+#userNotFoundDiv {
+    visibility: hidden;
+}
+
+.notfound {
+    height: 100%;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.notfoundimg {
+    height: 60%;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
 ul {
     list-style-type: none;
     margin: 0;
@@ -95,9 +120,11 @@ li a {
     border-bottom-width: thick;
 }
 
-#loginRegTabLink:hover span {
+
+.userTabNotSelected:hover {
     background-color: rgba(79, 205, 205, 1);
     color: #ffffff;
+    cursor: pointer;
 }
 
 #mainBody {
@@ -217,7 +244,6 @@ li a {
 }
 
 #startCodingButton:hover {
-    border-style: none;
     color: #ffffff;
     background-color: #79cdcd;
     cursor: pointer;
@@ -273,6 +299,12 @@ li a {
     height: auto;
 }
 
+#save {
+    padding-top: 20px;
+    width: 50%;
+    height: auto;
+}
+
 #errorIndicator {
     bottom: 0;
     right: 4%;
@@ -307,12 +339,27 @@ li a {
     cursor: pointer;
 }
 
+#save:hover {
+    opacity: 0.5;
+    cursor: pointer;
+}
+
 #fontSizeSelect {
     width: 155px;
     height: 30px;
     font-size: 18px;
     display: block;
     margin: auto;
+}
+
+.loginField {
+    width: 90%;
+    height: 30px;
+    font-size: 18px;
+    display: block;
+    margin: auto;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 .settingsChoiceTitle {
@@ -392,6 +439,20 @@ li a {
     text-align: center;
 }
 
+.loginRegister-header {
+    font-size: 10pt;
+    font-family: "Open Sans";
+    background-color: #79cdcd;
+    color: white;
+    text-align: center;
+    width: 50%;
+    float: left;
+}
+
+#loginRegisterTabsContainer {
+    padding-bottom: 40px;
+}
+
 .modal-body {
     padding: 2px 16px;
 }
@@ -401,6 +462,12 @@ li a {
     background-color: #79cdcd;
     color: white;
     text-align: center;
+    font-family: "Open Sans";
+}
+
+.loginRegister-header:hover {
+    opacity: 0.5;
+    cursor: pointer;
 }
 
 .modal-footer:hover {
@@ -418,6 +485,355 @@ li a {
     position: absolute;
     background: rgba(0, 255, 0, 0.3);
     z-index: 20
+}
+
+#loginRegisterForm input:focus:invalid { /* when a field is considered invalid by the browser */
+    background: #fff url(../images/cross.png) no-repeat 90% center;
+    background-size: 20px 20px;
+    box-shadow: 0 0 5px #d45252;
+    border-color: #b03535;
+}
+
+#loginRegisterForm input:required:valid { /* when a field is considered valid by the browser */
+    background: #fff url(../images/tick.png) no-repeat 90% center;
+    background-size: 20px 20px;
+    box-shadow: 0 0 5px #5cd053;
+    border-color: #28921f;
+}
+
+.form_hint {
+    background: #d45252;
+    border-radius: 3px 3px 3px 3px;
+    color: white;
+    margin-left:8px;
+    padding: 1px 6px;
+    z-index: 999; /* hints stay above all other elements */
+    position: absolute; /* allows proper formatting if hint is two lines */
+    margin-bottom:20px;
+}
+
+.form_hint::before {
+    color:#d45252;
+    position: absolute;
+    top:1px;
+    left:-6px;
+}
+
+#loginRegisterForm input:focus + .form_hint {display: inline;}
+#loginRegisterForm input:required:valid + .form_hint {display: none; background: #28921f;}
+#loginRegisterForm input:required:valid + .form_hint::before {color:#28921f;}
+
+*:focus {outline: none;}
+
+#userMainBody {
+    height: 80%;
+}
+
+#bodyDiv {
+    height: 100%;
+}
+
+#optionsBarDiv {
+    margin-top: 50px;
+    width: 100%;
+    height:250px;
+}
+
+#optionsBarTable {
+    background-color: #fbfbfb;
+    height: 100%;
+    float:left;
+}
+
+#userSettingsDiv {
+    margin-top: 50px;
+    margin-left: 50px;
+    width:70%;
+    height:100%;
+    float: left;
+}
+
+#userSettingsTable {
+    background-color: #fbfbfb;
+    height: 100%;
+}
+
+.optionsText {
+    font-family: "Open Sans", sans-serif;
+    color: #79cdcd;
+    font-size: 12pt;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+}
+
+.optionsBarOption {
+    border-bottom-style: solid;
+}
+
+.optionTD {
+    padding-left: 20px;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-bottom-color: #dddddd;
+    position: relative;
+}
+
+.optionTD:hover {
+    background-color: #eeeeee;
+    cursor: pointer;
+}
+
+.optionTD:active {
+    background-color: #eeeeee;
+    cursor: pointer;
+}
+
+#librariesTab {
+    border-color: #fbfbfb;
+}
+
+#accountSettingsTab {
+    background-color: #eeeeee;
+}
+
+#usernameTR {
+position: relative;
+    height: 100px;
+}
+
+#usernameTD {
+    padding-left:20px;
+    position: relative;
+}
+
+#usernameText {
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    font-family: "Bebas";
+    font-size: 24pt;
+    color: #79cdcd;
+}
+
+#changeContent {
+    padding-left: 20px;
+    padding-top: 20px;
+    height: 100%;
+    width: 100%;
+    display: block;
+    margin: 0;
+}
+
+.changeTitle {
+    font-family: "Bebas";
+    font-size: 20pt;
+    color: #79cdcd;
+}
+
+.detailsChange {
+    font-family: "Open Sans", sans-serif;
+    font-size: 12pt;
+    padding-top: 20px;
+}
+
+.detailsChangeInput {
+    border-style: none;
+    height: 30px;
+    width: 300px;
+    font-size: 10pt;
+    padding-left: 10px;
+    margin-left: 20px;
+    font-family: "Open Sans", sans-serif;
+}
+
+#updateDetailsButton {
+    font-family: "Josefin Sans";
+    color: #79cdcd;
+    border-style: solid;
+    border-color: #79cdcd;
+    padding: 10px;
+    font-size: 12pt;
+}
+
+#updateDetailsButton:hover {
+    color: #ffffff;
+    background-color: #79cdcd;
+    cursor: pointer;
+}
+
+#gapTR {
+    background-color: #ffffff;
+    height:20px;
+}
+
+#changeTR {
+    padding-left:20px;
+    height: 100%;
+    width: 100%;
+}
+
+#changeTD {
+    height: 100%;
+    width: 100%;
+}
+
+#accountSettings {
+    display: block;
+}
+
+#editorSettings {
+    display: none;
+}
+
+#programs {
+    display: none;
+    height: 100%;
+}
+
+#libraries {
+    display: none;
+    height: 100%;
+}
+
+.emptyBowlDiv {
+    height: 10%;
+    margin: 0 auto;
+}
+
+.emptyBowl {
+    height: 10%;
+    margin: auto;
+    transform: translate(85%, 0);
+}
+
+#bowlAnimationDiv {
+    width: 80%;
+    display: block;
+    margin: auto;
+}
+
+#bowlAnimation {
+    width: 100%;
+    display: block;
+    margin: auto;
+}
+
+#bowlAnimation:hover {
+    content:url("../images/fullBowl.png");
+}
+
+#leftSide {
+    float:left;
+    width: 20%;
+    margin-left: 40px;
+}
+
+.newProgramLibraryButton {
+    font-family: "Josefin Sans";
+    color: #79cdcd;
+    border-style: solid;
+    border-color: #79cdcd;
+    padding: 10px;
+    font-size: 12pt;
+    float:right;
+    margin-right: 40px;
+}
+
+.newProgramLibraryButton:hover {
+    color: #ffffff;
+    background-color: #79cdcd;
+    cursor: pointer;
+}
+
+#changeThemeDiv {
+    width: 0;
+    margin-top: 20px;
+}
+
+#fontSizeChange {
+    width: 155px;
+    height: 30px;
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+#logoutButton {
+    font-family: "Josefin Sans";
+    color: #79cdcd;
+    border-style: solid;
+    border-color: #79cdcd;
+    padding: 10px;
+    font-size: 12pt;
+    float:right;
+    margin-right: 20px;
+    margin-top: 28px;
+}
+
+#logoutButton:hover {
+    color: #ffffff;
+    background-color: #79cdcd;
+    cursor: pointer;
+}
+
+#logoutModal {
+    display: none;
+}
+
+.logoutModalOption {
+    font-size: 10pt;
+    font-family: "Open Sans";
+    background-color: #79cdcd;
+    color: white;
+    text-align: center;
+    width: 50%;
+    float: left;
+    z-index: 1;
+}
+
+.logoutModalOption:hover {
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+#logoutConfirmText {
+    font-size: 12pt;
+    text-align: center;
+    font-family: "Open Sans";
+}
+
+#usernameChangeCorrection {
+    display: none;
+}
+
+#emailChangeCorrection {
+    display: none;
+}
+
+#passwordChangeCorrection {
+    display: none;
+}
+
+.currentTab a {
+    color: #bbbbbb;
+    border-color: #bbbbbb;
+}
+
+.currentTab a:hover {
+    border-bottom-style: solid;
+    border-bottom-color: #bbbbbb;
+    border-bottom-width: thick;
+}
+
+.userTabSelected {
+    color: #bbbbbb;
+    border-color: #bbbbbb;
+}
+
+.userTabSelected:hover {
+    color: #ffffff;
+    background-color: #bbbbbb;
+    cursor: pointer;
 }
 
 

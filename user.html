@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Noodle Create - Collaborative Coding</title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="/assets/js/script.js"></script>
+  <script type="text/javascript" src="/assets/js/loginRegister.js"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet" />
+  <script src="/assets/js/jquery.easydropdown.js" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/easydropdown.css" />
+  <script>
+    $(document).ready(function() {
+      checkSession();
+      var user = checkUser();
+      if (user != null) {
+          setUserDetails(user);
+      }
+      if (user != sessionUser) {
+          hideChangeDetails();
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <div id="bodyDiv">
+    <div id="navbar">
+      <ul>
+        <li id="logo">
+          <a href="/create"> <img src="/assets/images/logo.png" /> </a>
+        </li>
+        <li>
+          <a id="loginRegTabLink"><span class="userTabSelected" onclick="loginRegisterClick()" id="loginRegTab">Login/Register</span></a>
+        </li>
+        <li class="normalTab"><a href="/learn">Learn</a></li>
+        <li class="normalTab"><a href="/create">Create</a></li>
+      </ul>
+    </div>
+    <div id="userNotFoundDiv" class="notfound">
+      <img class="notfoundimg" src="/assets/images/userNotFound.png" />
+    </div>
+    <div id="userMainBody">
+
+      <div id="loginRegisterModal" class="modal">
+        <div class="modal-content">
+          <div id="loginRegisterTabsContainer">
+            <div class="loginRegister-header" id="loginTab" onclick="showLogin()">
+              <h2>Login</h2>
+            </div>
+            <div class="loginRegister-header" id="registerTab" onclick="showRegister()">
+              <h2>Register</h2>
+            </div>
+          </div>
+
+          <div class="modal-body">
+            <br />
+            <p>
+              <form id="loginRegisterForm">
+                <input class="loginField" type="text" onfocus="validateUsername()" oninput="validateUsername()" id="usernameField" placeholder="Username" maxlength="16" required pattern="[a-zA-Z0-9_-]{3,16}">
+                <span id="usernameCorrection" class="form_hint"></span>
+                <input class="loginField" type="email" onfocus="validateEmail()" id="emailField" oninput="validateEmail()" placeholder="Email" maxlength="255" required>
+                <span id="emailCorrection" class="form_hint"></span>
+                <input class="loginField" oninput="validatePassword()" onfocus="validatePassword()" id="passwordField" placeholder="Password" type="password" maxlength="24" required>
+                <span id="passwordCorrection" class="form_hint"></span>
+              </form>
+            </p>
+          </div>
+          <div onclick="loginRegisterDone()" class="modal-footer">
+            <h3 id="loginRegisterButtonText">Login</h3>
+          </div>
+        </div>
+      </div>
+
+      <div id="logoutModal" class="modal">
+        <div class="modal-content">
+
+          <div class="modal-body">
+            <p id="logoutConfirmText">
+              Are you sure you want to log out?
+            </p>
+          </div>
+          <div id="logoutModalOptionsContainer">
+            <div class="logoutModalOption" id="logoutCancel" onclick="cancelLogout()">
+              <h2>Cancel</h2>
+            </div>
+            <div class="logoutModalOption" id="logoutLogout" onclick="logoutLogout()">
+              <h2>Logout</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="leftSide">
+        <div id="optionsBarDiv">
+          <div id="optionsBarTable" class="table-div" style="width:100%">
+            <div id="accountSettingsTR" class="tr-div optionsBarOption">
+              <div id="accountSettingsTab" onClick="accountSettingsClick()" class="td-div optionTD">
+                <div class="optionsText">
+                  Account Settings
+                </div>
+              </div>
+            </div>
+            <div id="editorSettingsTR" class="tr-div optionsBarOption">
+              <div id="editorSettingsTab" onClick="editorSettingsClick()" class="td-div optionTD">
+                <div class="optionsText">
+                  Editor Settings
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="programsTab" onClick="programsClick()" class="td-div optionTD">
+                <div class="optionsText">
+                  Programs
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="librariesTab" onClick="librariesClick()" class="td-div optionTD">
+                <div class="optionsText">
+                  Libraries
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!--
+        <div id="bowlAnimationDiv">
+          <img src="/assets/images/emptyBowl.png" id="bowlAnimation" />
+        </div>
+    -->
+      </div>
+      <div id="userSettingsDiv">
+        <div id="userSettingsTable" class="table-div" style="width:100%">
+          <div id="usernameTR" class="tr-div">
+            <div id="usernameTD" class="td-div">
+              <div id="usernameText">
+              </div>
+              <span onClick="logout()" id="logoutButton">Logout</span>
+            </div>
+          </div>
+          <div id="gapTR" class="tr-div">
+            <div id="gapTD" class="td-div">
+              &nbsp;
+            </div>
+          </div>
+          <div id="changeTR" class="tr-div">
+            <div id="changeTD" class="td-div">
+              <div id="changeContent">
+                <div id="accountSettings">
+                  <div class="changeTitle">
+                    Account Settings
+                  </div>
+                  <div class="detailsChange">
+                    Username
+                    <input id="usernameChangeField" type="text" class="detailsChangeInput" maxlength="16" />
+                    <span id="usernameChangeCorrection" class="form_hint"></span>
+                  </div>
+                  <div class="detailsChange">
+                    Email&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <input id="emailChangeField" type="email" class="detailsChangeInput" maxlength="255" />
+                    <span id="emailChangeCorrection" class="form_hint"></span>
+                  </div>
+                  <div class="detailsChange">
+                    Password&nbsp;&nbsp;
+                    <input id="passwordChangeField" type="password" class="detailsChangeInput" maxlength="24" />
+                    <span id="passwordChangeCorrection" class="form_hint"></span>
+                  </div>
+                  <div class="detailsChange">
+                    <span onClick="validateChanges()" id="updateDetailsButton">Change</span>
+                  </div>
+                </div>
+                <div id="editorSettings">
+                  <div class="changeTitle">
+                    Editor Settings
+                  </div>
+                  <div class="detailsChange">
+                    Theme
+                    <div id="changeThemeDiv">
+
+
+                    <select id="changeTheme" class="dropdown">
+                      <option value="" class="label">Select</option>
+                      <option value="noodle_light">Noodle Light</option>
+                      <option value="noodle_dark">Noodle Dark</option>
+
+                  </select>
+                   </div>
+                  </div>
+                  <div class="detailsChange">
+                    Font Size <br />
+                    <input id="fontSizeChange" type="number" value="10" min="8" max="20">
+                  </div>
+                  <div class="detailsChange">
+                    <span onclick="updatePreferences()" id="updateDetailsButton">Change</span>
+                  </div>
+                </div>
+                <div id="programs">
+                  <div class="changeTitle">
+                    Programs
+                    <span class="newProgramLibraryButton" id="newProgramButton">New Program</span>
+                  </div>
+                  <div class="emptyBowlDiv">
+                    <img class="emptyBowl" src="/assets/images/nothingHere.png" />
+                  </div>
+                </div>
+                <div id="libraries">
+                  <div class="changeTitle">
+                    Libraries
+                    <span class="newProgramLibraryButton" id="newLibraryButton">New Library</span>
+                  </div>
+                  <div class="emptyBowlDiv">
+                    <img class="emptyBowl" src="/assets/images/nothingHere.png" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

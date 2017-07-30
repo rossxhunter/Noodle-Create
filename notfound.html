@@ -1,0 +1,33 @@
+<html>
+
+<head>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="/assets/js/script.js"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+  <script>
+    $(document).ready(function() {
+      checkSession();
+    });
+  </script>
+</head>
+
+<body>
+  <div id="bodyDiv">
+    <div id="navbar">
+      <ul>
+        <li id="logo">
+          <a href="/create"> <img src="/assets/images/logo.png" /> </a>
+        </li>
+        <li>
+          <a id="loginRegTabLink"><span class="userTabNotSelected" onclick="loginRegisterClick()" id="loginRegTab">Login/Register</span></a>
+        </li>
+        <li class="normalTab"><a href="/learn">Learn</a></li>
+        <li class="normalTab"><a href="/create">Create</a></li>
+      </ul>
+    </div>
+    <div class="notfound">
+      <img class="notfoundimg" src="/assets/images/pageNotFound.png" />
+    </div>
+</body>
+
+</html>

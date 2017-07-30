@@ -1,5 +1,9 @@
 var linesArray;
 var sizeMode = 0;
+var startedCoding = false;
+var registerValid = true;
+var loginValid = true;
+var sessionUser;
 
 function setDimensions(editor) {
     setSize0();
@@ -25,23 +29,392 @@ function setSize0() {
     document.getElementById("outputBorderDiv").style.height = editorHeight + 1 + 'px';
 }
 
-window.addEventListener('resize', function(event){
-  switch (sizeMode) {
-      case 0 : setSize1();
-      case 1 : setSize2();
-      case 2 : setSize1();
-  }
+/*
+window.addEventListener('resize', function(event) {
+    switch (sizeMode) {
+        case 0:
+            setSize1();
+        case 1:
+            setSize2();
+        case 2:
+            setSize1();
+    }
 });
-
-function settingsClick() {
-    document.getElementById('myModal').style.display = "block";
+*/
+function checkSession() {
+    $.ajax({
+        async: false,
+        url: "/db/session.php",
+        success: function(status) {
+            if (status != "Login/Register") {
+                document.getElementById('loginRegTab').innerHTML = status;
+                sessionUser = status;
+            }
+        }
+    });
 }
 
-function done() {
+function checkUser() {
+    var user = GetURLParameter('username');
+    var exists = false;
+    $.ajax({
+        async: false,
+        data: {
+            "user": user
+        },
+        type: "POST",
+        url: "/db/checkUser.php",
+        success: function(status) {
+            if (status == "success") {
+                exists = true;
+            }
+        }
+    });
+    if (!exists) {
+        $('#userNotFoundDiv').css('visibility', 'visible');
+        $('#userMainBody').css('visibility', 'hidden');
+
+    } else {
+        $('#userNotFoundDiv').css('visibility', 'hidden');
+        $('#userMainBody').css('visibility', 'visible');
+        return user;
+    }
+}
+
+function GetURLParameter(sParam) {
+    var sPageURL = window.location.href;
+    var user = sPageURL.substr(sPageURL.indexOf("user/") + 5);
+    return user;
+}
+
+function accountSettingsClick() {
+    $('#accountSettings').css('display', 'block');
+    $('#editorSettings').css('display', 'none');
+    $('#programs').css('display', 'none');
+    $('#libraries').css('display', 'none');
+    $('#accountSettingsTab').css('background-color', '#eeeeee');
+    $('#editorSettingsTab').css('background-color', '#fbfbfb');
+    $('#programsTab').css('background-color', '#fbfbfb');
+    $('#librariesTab').css('background-color', '#fbfbfb');
+}
+
+function editorSettingsClick() {
+    $('#editorSettings').css('display', 'block');
+    $('#accountSettings').css('display', 'none');
+    $('#programs').css('display', 'none');
+    $('#libraries').css('display', 'none');
+    $('#editorSettingsTab').css('background-color', '#eeeeee');
+    $('#accountSettingsTab').css('background-color', '#fbfbfb');
+    $('#programsTab').css('background-color', '#fbfbfb');
+    $('#librariesTab').css('background-color', '#fbfbfb');
+}
+
+function programsClick() {
+    $('#programs').css('display', 'block');
+    $('#accountSettings').css('display', 'none');
+    $('#editorSettings').css('display', 'none');
+    $('#libraries').css('display', 'none');
+    $('#programsTab').css('background-color', '#eeeeee');
+    $('#accountSettingsTab').css('background-color', '#fbfbfb');
+    $('#editorSettingsTab').css('background-color', '#fbfbfb');
+    $('#librariesTab').css('background-color', '#fbfbfb');
+}
+
+function librariesClick() {
+    $('#libraries').css('display', 'block');
+    $('#accountSettings').css('display', 'none');
+    $('#programs').css('display', 'none');
+    $('#editorSettings').css('display', 'none');
+    $('#librariesTab').css('background-color', '#eeeeee');
+    $('#accountSettingsTab').css('background-color', '#fbfbfb');
+    $('#programsTab').css('background-color', '#fbfbfb');
+    $('#editorSettingsTab').css('background-color', '#fbfbfb');
+}
+
+function setUserDetails(user) {
+    document.getElementById('usernameText').innerHTML = user;
+    document.getElementById('usernameChangeField').value = user;
+    $.ajax({
+        async: false,
+        data: {
+            "user": user
+        },
+        type: "POST",
+        url: "/db/getUserDetails.php",
+        success: function(r) {
+            var res = JSON.parse(r);
+            document.getElementById('emailChangeField').value = res['email'];
+            document.getElementById('passwordChangeField').value = res['password'];
+            document.getElementById('changeTheme').value = res['password'];
+            document.getElementById('fontSizeChange').value = res['font_size'];
+        }
+    });
+}
+
+function updatePreferences() {
+    var theme = document.getElementById('changeTheme').value;
+    if (theme == "") {
+        theme = "noodle_light";
+    }
+    var fontSize = document.getElementById('fontSizeChange').value;
+    if (fontSize < 8) {
+        fontSize = 8;
+    }
+    if (fontSize > 20) {
+        fontSize = 20;
+    }
+    $.ajax({
+        async: false,
+        type: "POST",
+        data: {
+            "user": sessionUser,
+            "theme": theme,
+            "fontSize": fontSize
+        },
+        url: "/db/updatePreferences.php",
+        success: function(status) {
+        }
+    });
+}
+
+function hideChangeDetails() {
+    $('#accountSettingsTR').css('display', 'none');
+    $('#editorSettingsTR').css('display', 'none');
+    $('#optionsBarDiv').css('height', '125px');
+    $('#logoutButton').css('display', 'none');
+    programsClick();
+}
+
+function logout() {
+    $('#logoutModal').css('display', 'block');
+}
+
+function cancelLogout() {
+    $('#logoutModal').css('display', 'none');
+}
+
+function logoutLogout() {
+    $.ajax({
+        url: "/db/logout.php",
+        success: function() {
+            window.open("/index", '_self', "IndexPage");
+        }
+    });
+}
+
+function saveClick() {
+    $.ajax({
+        url: "/db/session.php",
+        success: function(status) {
+            if (status == "Login/Register") {
+                openLoginRegister();
+            } else {
+                saveProgram();
+            }
+        }
+    });
+}
+
+function saveProgram() {
+    var code = editor.getValue();
+    $.ajax({
+        data: {
+            "code": code
+        },
+        async: false,
+        type: "POST",
+        url: "/db/save.php",
+        success: function(status) {
+            alert(status);
+        }
+    });
+}
+
+function loginRegisterClick() {
+    $.ajax({
+        url: "/db/session.php",
+        success: function(status) {
+            if (status == "Login/Register") {
+                openLoginRegister();
+            } else {
+                openUserPage(status);
+            }
+        }
+    });
+}
+
+function openUserPage(user) {
+    window.open("/user/" + user, '_self', "UserPage");
+}
+
+function openLoginRegister() {
+    document.getElementById('emailCorrection').style.display = "none";
+    document.getElementById('usernameCorrection').style.display = "none";
+    document.getElementById('passwordCorrection').style.display = "none";
+    var emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    document.getElementById('emailField').setAttribute("pattern", emailRegex.source);
+    var passwordRegex = /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,24})/;
+    document.getElementById('passwordField').setAttribute("pattern", passwordRegex.source);
+    document.getElementById('loginTab').style.backgroundColor = "#aee1e1";
+    document.getElementById('emailField').style.display = "none";
+    document.getElementById('usernameField').value = "";
+    document.getElementById('emailField').value = "";
+    document.getElementById('passwordField').value = "";
+    document.getElementById('loginRegisterModal').style.display = "block";
+}
+
+function showLogin() {
+    document.getElementById('emailField').style.display = "none";
+    document.getElementById('registerTab').style.backgroundColor = "#79cdcd";
+    document.getElementById('loginTab').style.backgroundColor = "#aee1e1";
+    document.getElementById('loginRegisterButtonText').textContent = "Login";
+}
+
+function showRegister() {
+    document.getElementById('emailField').style.display = "block";
+    document.getElementById('loginTab').style.backgroundColor = "#79cdcd";
+    document.getElementById('registerTab').style.backgroundColor = "#aee1e1";
+    document.getElementById('loginRegisterButtonText').textContent = "Register";
+}
+
+function settingsClick() {
+    document.getElementById('settingsModal').style.display = "block";
+}
+
+function loginRegisterDone() {
+    if (document.getElementById('loginRegisterButtonText').textContent == "Login") {
+        var validLogin = login(document.getElementById('usernameField').value, document.getElementById('passwordField').value);
+        if (validLogin) {
+            document.getElementById('loginRegisterModal').style.display = "none";
+        }
+    } else {
+        var validRegistration = register(document.getElementById('usernameField').value, document.getElementById('emailField').value, document.getElementById('passwordField').value);
+        if (validRegistration) {
+            document.getElementById('loginRegisterModal').style.display = "none";
+        }
+    }
+}
+
+function validateChanges() {
+    var isValid;
+    var username = document.getElementById('usernameChangeField').value;
+    var email = document.getElementById('emailChangeField').value;
+    var password = document.getElementById('passwordChangeField').value;
+    isValid = usernameChangeValid(username);
+    if (isValid) {
+        isValid = emailChangeValid(email);
+    }
+    if (isValid) {
+        isValid = passwordChangeValid(password);
+    }
+    if (isValid) {
+        $.ajax({
+            async: false,
+            type: "POST",
+            data: {
+                "oldUsername": sessionUser,
+                "user": username,
+                "email": email,
+                "password": password
+            },
+            url: "/db/updateDetails.php",
+            success: function(status) {
+                if (status != "success") {
+                    handleUpdateDetailsError(status);
+                } else {
+                    $.ajax({
+                        async: false,
+                        url: "/db/logout.php",
+                        success: function() {}
+                    });
+                    $.ajax({
+                        async: false,
+                        data: {
+                            "username": username
+                        },
+                        type: "POST",
+                        url: "/db/startSession.php",
+                        success: function(s) {
+                        }
+                    });
+                    window.open("/user/" + username, '_self', "UserPage");
+                }
+            }
+        });
+    }
+}
+
+function handleUpdateDetailsError(s) {
+    status = s.toString();
+    if (status.match(/Duplicate entry '.*' for key 'PRIMARY'/) != null) {
+        document.getElementById('usernameChangeCorrection').innerHTML = "Username already taken";
+        document.getElementById('usernameChangeCorrection').style.display = "block";
+        document.getElementById('usernameChangeCorrection').style.background = "#d45252";
+        document.getElementById('usernameChangeField').style.borderColor = '#28921f';
+    } else if (status.match(/Duplicate entry '.*' for key 'email'/) != null) {
+        document.getElementById('emailChangeCorrection').innerHTML = "Email already taken";
+        document.getElementById('emailChangeCorrection').style.display = "block";
+        document.getElementById('emailChangeCorrection').style.background = "#d45252";
+        document.getElementById('emailChangeField').style.borderColor = '#28921f';
+    }
+}
+
+function usernameChangeValid(username) {
+    document.getElementById('emailChangeCorrection').style.display = "none";
+    document.getElementById('passwordChangeCorrection').style.display = "none";
+    if (username.length < 3) {
+        document.getElementById('usernameChangeCorrection').style.display = "block";
+        document.getElementById('usernameChangeCorrection').innerHTML = "Username too short";
+    } else if (username.length > 16) {
+        document.getElementById('usernameChangeCorrection').style.display = "block";
+        document.getElementById('usernameChangeCorrection').innerHTML = "Username too long";
+    } else if (username.match(/^[a-zA-Z0-9_-]{3,16}$/) == null) {
+        document.getElementById('usernameChangeCorrection').style.display = "block";
+        document.getElementById('usernameChangeCorrection').innerHTML = "No special characters";
+    } else {
+        document.getElementById('usernameChangeCorrection').style.display = "none";
+        return true;
+    }
+    return false;
+}
+
+function emailChangeValid(email) {
+    document.getElementById('usernameChangeCorrection').style.display = "none";
+    document.getElementById('passwordChangeCorrection').style.display = "none";
+    if (email.match(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/) == null) {
+        document.getElementById('emailChangeCorrection').style.display = "block";
+        document.getElementById('emailChangeCorrection').innerHTML = "Email not valid";
+    } else {
+        document.getElementById('emailChangeCorrection').style.display = "none";
+        return true;
+    }
+    return false;
+}
+
+function passwordChangeValid(password) {
+    document.getElementById('emailChangeCorrection').style.display = "none";
+    document.getElementById('usernameChangeCorrection').style.display = "none";
+    if (password.length < 6) {
+        document.getElementById('passwordChangeCorrection').style.display = "block";
+        document.getElementById('passwordChangeCorrection').innerHTML = "Password too short";
+    } else if (password.length > 24) {
+        document.getElementById('passwordChangeCorrection').style.display = "block";
+        document.getElementById('passwordChangeCorrection').innerHTML = "Password too long";
+    } else if (password.match(/^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,24})/) == null) {
+        document.getElementById('passwordChangeCorrection').style.display = "block";
+        document.getElementById('passwordChangeCorrection').innerHTML = "Password not valid";
+    } else {
+        document.getElementById('passwordChangeCorrection').style.display = "none";
+        return true;
+    }
+    return false;
+}
+
+function settingsDone() {
     var theme = document.getElementById('themeSelect').value;
     var fontSize = document.getElementById('fontSizeSelect').value;
     if (fontSize >= 8 && fontSize <= 20) {
-        document.getElementById('myModal').style.display = "none";
+        document.getElementById('settingsModal').style.display = "none";
         var theme = document.getElementById('themeSelect').value;
         var fontSize = document.getElementById('fontSizeSelect').value;
         setTheme(theme);
