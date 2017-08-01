@@ -5,29 +5,37 @@
   <meta charset="UTF-8">
   <title>Noodle Create - Collaborative Coding</title>
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  <script type="text/javascript" src="assets/js/script.js"></script>
-  <script type="text/javascript" src="assets/js/errorCheck.js"></script>
-  <script type="text/javascript" src="assets/js/errorCheckHelper.js"></script>
-  <script type="text/javascript" src="assets/js/decode.js"></script>
-  <script type="text/javascript" src="assets/js/decodeHelper.js"></script>
-  <script type="text/javascript" src="assets/js/loginRegister.js"></script>
-  <link rel="stylesheet" type="text/css" href="assets/css/style.css">
-  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <script src="/assets/js/utils.js"></script>
+  <script type="text/javascript" src="/assets/js/script.js"></script>
+  <script type="text/javascript" src="/assets/js/errorCheck.js"></script>
+  <script type="text/javascript" src="/assets/js/errorCheckHelper.js"></script>
+  <script type="text/javascript" src="/assets/js/decode.js"></script>
+  <script type="text/javascript" src="/assets/js/decodeHelper.js"></script>
+  <script type="text/javascript" src="/assets/js/loginRegister.js"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet" />
-  <script src="assets/js/jquery.easydropdown.js" type="text/javascript"></script>
-  <link rel="stylesheet" type="text/css" href="assets/css/easydropdown.css" />
+  <script src="/assets/js/jquery.easydropdown.js" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/easydropdown.css" />
   <script>
     $(document).ready(function() {
-        checkSession();
-      $('#bodyDiv').fadeIn('slow');
-      $('#startCodingButton').click(function() {
+      checkSession();
+      if (sessionUser != null) {
+        $('#welcome').hide();
+        $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
         startedCoding = true;
-        $('#welcome').fadeOut('slow', function() {
-          $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
-          //$('#mainTableDiv').fadeIn('slow');
+        $('#bodyDiv').fadeIn('slow');
+      } else {
+        $('#bodyDiv').fadeIn('slow');
+        $('#startCodingButton').click(function() {
+          startedCoding = true;
+          $('#welcome').fadeOut('slow', function() {
+            $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
+            //$('#mainTableDiv').fadeIn('slow');
+          });
         });
-      });
+      }
     });
   </script>
 </head>
@@ -37,13 +45,13 @@
     <div id="navbar">
       <ul>
         <li id="logo">
-          <a href="create"> <img src="assets/images/logo.png" /> </a>
+          <a href="/create"> <img src="/assets/images/logo.png" /> </a>
         </li>
         <li>
           <a id="loginRegTabLink"><span onclick="loginRegisterClick()" class="userTabNotSelected" id="loginRegTab">Login/Register</span></a>
         </li>
-        <li class="normalTab"><a href="learn">Learn</a></li>
-        <li class="currentTab"><a href="create">Create</a></li>
+        <li class="normalTab"><a href="/learn">Learn</a></li>
+        <li class="currentTab"><a href="/create">Create</a></li>
       </ul>
     </div>
     <div id="mainBody">
@@ -53,7 +61,7 @@
       </div>
 
       <div id="loginRegisterModal" class="modal">
-        <div class="modal-content">
+        <div id="loginRegisterModalContent" class="modal-content">
           <div id="loginRegisterTabsContainer">
             <div class="loginRegister-header" id="loginTab" onclick="showLogin()">
               <h2>Login</h2>
@@ -83,7 +91,7 @@
       </div>
 
       <div id="settingsModal" class="modal">
-        <div class="modal-content">
+        <div id="settingsModalContent" class="modal-content">
           <div class="modal-header">
             <h2>Settings</h2>
           </div>
@@ -110,36 +118,105 @@
           </div>
         </div>
       </div>
-      <div id="mainTableDiv">
-        <div class="table-div" style="width:100%">
-          <div class="tr-div">
-            <div id="editorContainer" class="td-div">
-              <div id="editorBorderDiv">
-              </div>
-              <div id="editorDiv">
-                <pre id="editor"></pre>
-                <script src="ace/demo/kitchen-sink/require.js"></script>
-                <script src="assets/js/setupEditor.js"></script>
-                <script>
-                  setupEditor();
-                </script>
-              </div>
-            </div>
-            <div id="toolbarDiv" class="td-div">
-              <img onclick="noodle(editor.getValue())" id="run" src="assets/images/run.png" />
-              <img onclick="saveClick()" id="save" src="assets/images/save.png" />
-              <img onclick="fullScreen()" id="fullScreen" src="assets/images/fullScreen.png" />
-              <img onclick="find()" id="find" src="assets/images/find.png" />
-              <img id="clean" src="assets/images/clean.png" />
-              <img onclick="settingsClick()" id="settings" src="assets/images/settings.png" />
-              <img id="errorIndicator" />
-            </div>
-            <div class="td-div" id="noodleOutputBoxContainer">
-              <div id="outputBorderDiv">
-                <div id="outputText">
-                  OUTPUT
+      <div id="saveNameModal" class="modal">
+        <div id="saveNameModalContent" class="modal-content">
+          <div class="modal-body">
+            <p>
+              <input type="text" id="fileName" placeholder="File Name">
+              <span id="fileNameCorrection" class="form_hint"></span>
+            </p>
+          </div>
+          <div onclick="saveName()" class="modal-footer">
+            <h3>Save</h3>
+          </div>
+        </div>
+      </div>
+      <div id="flippers">
+
+
+        <div class="flipDiv" id="mainTableDiv">
+          <div class="table-div" style="width:100%">
+            <div class="tr-div">
+              <div id="editorContainer" class="td-div">
+                <div id="editorBorderDiv">
                 </div>
-                <textarea id="noodleOutputBox" readonly></textarea>
+                <div id="editorDiv">
+                  <pre id="editor"></pre>
+                  <script src="/ace/demo/kitchen-sink/require.js"></script>
+                  <script src="/assets/js/setupEditor.js"></script>
+                  <script>
+                    setupEditor();
+                  </script>
+                </div>
+              </div>
+              <div id="toolbarDiv" class="td-div">
+                <div class="tooltip">
+                  <img onclick="noodle(editor.getValue())" id="run" src="/assets/images/run.png" />
+                  <span class="tooltiptext">Run</span>
+                </div>
+                <div class="tooltip">
+                  <img onclick="saveClick()" id="save" src="/assets/images/save.png" />
+                  <span class="tooltiptext">Save</span>
+                </div>
+                <div class="tooltip">
+                  <img onclick="newFileClick()" id="newFile" src="/assets/images/newFile.png" />
+                  <span class="tooltiptext">New</span>
+                </div>
+                <div class="tooltip">
+                  <img onclick="libraryClick()" id="library" src="/assets/images/library.png" />
+                  <span class="tooltiptext">Browse</span>
+                </div>
+                <img onclick="fullScreen()" id="fullScreen" src="/assets/images/fullScreen.png" />
+                <img onclick="find()" id="find" src="/assets/images/find.png" />
+                <img id="clean" src="/assets/images/clean.png" />
+                <img onclick="settingsClick()" id="settings" src="/assets/images/settings.png" />
+                <img id="errorIndicator" />
+              </div>
+              <div class="td-div" id="noodleOutputBoxContainer">
+                <div id="outputBorderDiv">
+                  <div id="outputText">
+                    OUTPUT
+                  </div>
+                  <textarea id="noodleOutputBox" readonly></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flipDiv" id="browseDiv">
+          <div class="table-div" style="width:100%">
+            <div class="tr-div">
+              <div id="browsePaneContainer" class="td-div">
+                <div id="browsePaneBorderDiv">
+                </div>
+                <div id="browsePaneDiv">
+                  <div id="searchBarDiv">
+                      <form>
+                        <input id="searchBar" type="text" name="search" placeholder="Search for Libraries">
+                      </form>
+                  </div>
+                  <div id="searchResultsDiv">
+                      <table id="searchResultsTable">
+                        <tr>
+                          <th class="searchResultsHeader" id="searchNameHeader">Name</th>
+                          <th class="searchResultsHeader" id="searchUserHeader">User</th>
+                          <th class="searchResultsHeader" id="searchActionsHeader">Actions</th>
+                        </tr>
+                      </table>
+                  </div>
+                </div>
+
+              </div>
+              <div id="browseToolbarDiv" class="td-div">
+                <div class="tooltip">
+                  <img onclick="pencilClick()" id="pencil" src="/assets/images/pencil.png" />
+                  <span class="tooltiptext">Code</span>
+                </div>
+              </div>
+              <div class="td-div" id="browseSelectBoxContainer">
+                <div id="browseSelectBorderDiv">
+                  Yo Bruh!
+                </div>
               </div>
             </div>
           </div>

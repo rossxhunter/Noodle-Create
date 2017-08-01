@@ -18,11 +18,13 @@
       checkSession();
       var user = checkUser();
       if (user != null) {
-          setUserDetails(user);
+        setUserDetails(user);
       }
       if (user != sessionUser) {
-          hideChangeDetails();
+        hideChangeDetails();
       }
+      getPrograms();
+      getLibraries();
     });
   </script>
 </head>
@@ -47,7 +49,7 @@
     <div id="userMainBody">
 
       <div id="loginRegisterModal" class="modal">
-        <div class="modal-content">
+        <div id="loginRegisterModalContent" class="modal-content">
           <div id="loginRegisterTabsContainer">
             <div class="loginRegister-header" id="loginTab" onclick="showLogin()">
               <h2>Login</h2>
@@ -77,19 +79,73 @@
       </div>
 
       <div id="logoutModal" class="modal">
-        <div class="modal-content">
+        <div id="logoutModalContent" class="modal-content">
 
           <div class="modal-body">
-            <p id="logoutConfirmText">
+            <p class="confirmText">
               Are you sure you want to log out?
             </p>
           </div>
           <div id="logoutModalOptionsContainer">
-            <div class="logoutModalOption" id="logoutCancel" onclick="cancelLogout()">
+            <div class="confirmModalOption" id="logoutCancel" onclick="cancelLogout()">
               <h2>Cancel</h2>
             </div>
-            <div class="logoutModalOption" id="logoutLogout" onclick="logoutLogout()">
+            <div class="confirmModalOption" id="logoutLogout" onclick="logoutLogout()">
               <h2>Logout</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="previewModal" class="modal">
+        <div id="previewModalContent" class="modal-content">
+          <div class="modal-body">
+              <div id="previewEditorDiv">
+                <pre id="previewEditor"></pre>
+                <script src="/ace/demo/kitchen-sink/require.js"></script>
+                <script src="/assets/js/setupEditor.js"></script>
+                <script>
+                  setupPreviewEditor();
+                </script>
+              </div>
+          </div>
+          <div onclick="previewClose()" class="modal-footer">
+            <h3 id="previewModalCloseText">Close</h3>
+          </div>
+        </div>
+      </div>
+      <div id="editModal" class="modal">
+        <div id="editModalContent" class="modal-content">
+          <div class="modal-body">
+            <p id="editNameText">
+              Edit Name
+            </p>
+            <p>
+              <input type="text" id="editFileName">
+              <span id="editFileNameCorrection" class="form_hint"></span>
+            </p>
+            <p id="editNameText">
+              OR
+            </p>
+            <span onClick="deleteFile()" id="deleteFileButton">DELETE</span>
+          </div>
+          <div onclick="editSave()" class="modal-footer">
+            <h3 id="editModalCloseText">Save</h3>
+          </div>
+        </div>
+      </div>
+      <div id="deleteConfirmModal" class="modal">
+        <div id="deleteConfirmModalContent" class="modal-content">
+          <div class="modal-body">
+            <p class="confirmText">
+              Are you sure you want to delete this file?
+            </p>
+          </div>
+          <div id="deleteConfirmModalOptionsContainer">
+            <div class="confirmModalOption" id="deleteCancel" onclick="cancelDelete()">
+              <h2>Cancel</h2>
+            </div>
+            <div class="confirmModalOption" id="deleteDelete" onclick="deleteDelete()">
+              <h2>Delete</h2>
             </div>
           </div>
         </div>
@@ -182,13 +238,13 @@
                     <div id="changeThemeDiv">
 
 
-                    <select id="changeTheme" class="dropdown">
+                      <select id="changeTheme" class="dropdown">
                       <option value="" class="label">Select</option>
                       <option value="noodle_light">Noodle Light</option>
                       <option value="noodle_dark">Noodle Dark</option>
 
                   </select>
-                   </div>
+                    </div>
                   </div>
                   <div class="detailsChange">
                     Font Size <br />
@@ -201,19 +257,41 @@
                 <div id="programs">
                   <div class="changeTitle">
                     Programs
-                    <span class="newProgramLibraryButton" id="newProgramButton">New Program</span>
+                    <span onclick="newProgramClick()" class="newProgramLibraryButton" id="newProgramButton">New Program</span>
                   </div>
-                  <div class="emptyBowlDiv">
+
+                  <div id="programNothingHere" class="emptyBowlDiv">
                     <img class="emptyBowl" src="/assets/images/nothingHere.png" />
+                  </div>
+
+                  <div id="programListDiv">
+                    <table id="programListTable">
+                      <tr>
+                        <th class="nameHeader">Name</th>
+                        <th class="extraHeader">Extra</th>
+                        <th class="actionsHeader">Actions</th>
+                      </tr>
+                    </table>
                   </div>
                 </div>
                 <div id="libraries">
                   <div class="changeTitle">
                     Libraries
-                    <span class="newProgramLibraryButton" id="newLibraryButton">New Library</span>
+                    <span onclick="newLibraryClick()" class="newProgramLibraryButton" id="newLibraryButton">New Library</span>
                   </div>
-                  <div class="emptyBowlDiv">
+
+                  <div id="libraryNothingHere" class="emptyBowlDiv">
                     <img class="emptyBowl" src="/assets/images/nothingHere.png" />
+                  </div>
+
+                  <div id="libraryListDiv">
+                    <table id="libraryListTable">
+                      <tr>
+                        <th class="nameHeader">Name</th>
+                        <th class="extraHeader">Extra</th>
+                        <th class="actionsHeader">Actions</th>
+                      </tr>
+                    </table>
                   </div>
                 </div>
               </div>

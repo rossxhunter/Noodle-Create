@@ -243,12 +243,13 @@ function isValid(type, line) {
             var reg = new RegExp(start.source + returnType.source + name.source + paramList.source);
             return line.match(reg) != null;
         case "funcCall":
-            var param = new RegExp(/[a-zA-Z_][a-zA-Z0-9_]*/.source);
+            var param = new RegExp(/.*/.source);
             var p1 = /\(\s*/;
             var p2 = /\s*,\s*/;
             var p3 = /\s*\)\s*$/;
-            var paramList = new RegExp(p1.source + "(" + param.source + "(" + p2.source + param.source + ")*)?" + p3.source);
+            var paramList = new RegExp(p1.source + param.source + "((" + p2.source + param.source + ")*)?" + p3.source);
             var reg = new RegExp(/^[a-zA-Z_][a-zA-Z0-9_]*/.source + paramList.source);
+            window.alert(line);
             return line.match(reg) != null;
         case "return":
             return line.match(/^return\s*.*$/) != null;

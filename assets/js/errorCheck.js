@@ -213,11 +213,11 @@ function checkLine(line, lineNumber) {
         var args = getArgs(line);
         addArgsToVars(args, lineNumber);
         //isCorrect = checkFunc(line, lineNumber);
-    } else if (line.trim().search(/^.*\(.*\)$/) == 0) {
-        isCorrect = checkFuncCall(line, lineNumber);
     } else if (line.match(/^(return|return\s.*)$/) != null) {
         isCorrect = checkReturn(line, lineNumber);
-    } else {
+    } else if (line.trim().search(/^.*\(.*\)$/) == 0) {
+        isCorrect = checkFuncCall(line, lineNumber);
+    }  else {
         if (line.replace(/\s/g, '') != "" && line.match(/^\/\/.*$/) == null) {
             isCorrect = false;
             addError("Unrecognised statement on line " + lineNumber);
