@@ -57,3 +57,26 @@ function setupPreviewEditor() {
         e.setReadOnly(true);
     });
 }
+
+function setupSearchEditor() {
+    // setup paths
+    require.config({
+        paths: {
+            "ace": "/ace/lib/ace"
+        }
+    });
+    // load ace and extensions
+    require(["ace/ace", "ace/ext/static_highlight", "ace/ext/language_tools"], function(ace) {
+        var e = ace.edit("searchEditor");
+        setSearchEditor(e);
+        setAce(ace);
+        e.setTheme("ace/theme/noodle_light");
+        e.session.setOptions({
+            mode: "ace/mode/noodle",
+            tabSize: 2,
+            useSoftTabs: true
+        });
+        e.setAutoScrollEditorIntoView(true);
+        e.setReadOnly(true);
+    });
+}

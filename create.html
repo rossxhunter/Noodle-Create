@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <title>Noodle Create - Collaborative Coding</title>
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  <script src="/assets/js/utils.js"></script>
   <script type="text/javascript" src="/assets/js/script.js"></script>
   <script type="text/javascript" src="/assets/js/errorCheck.js"></script>
   <script type="text/javascript" src="/assets/js/errorCheckHelper.js"></script>
@@ -145,6 +144,7 @@
                   <script src="/ace/demo/kitchen-sink/require.js"></script>
                   <script src="/assets/js/setupEditor.js"></script>
                   <script>
+                    setupSearchEditor();
                     setupEditor();
                   </script>
                 </div>
@@ -191,18 +191,20 @@
                 </div>
                 <div id="browsePaneDiv">
                   <div id="searchBarDiv">
-                      <form>
-                        <input id="searchBar" type="text" name="search" placeholder="Search for Libraries">
-                      </form>
+                    <input id="searchBar" type="text" placeholder="Search for Libraries">
+                  </div>
+                  <div id="searchNothingHere">
+                    <img id="emptyBowlImg" src="/assets/images/nothingHere.png" />
                   </div>
                   <div id="searchResultsDiv">
-                      <table id="searchResultsTable">
-                        <tr>
-                          <th class="searchResultsHeader" id="searchNameHeader">Name</th>
-                          <th class="searchResultsHeader" id="searchUserHeader">User</th>
-                          <th class="searchResultsHeader" id="searchActionsHeader">Actions</th>
-                        </tr>
-                      </table>
+                    <table id="searchResultsTable">
+                      <tr>
+                        <th class="searchResultsHeader" id="searchNameHeader">Name</th>
+                        <th class="searchResultsHeader" id="searchUserHeader">User</th>
+                        <th class="searchResultsHeader" id="searchExtraHeader">Extra</th>
+                        <th class="searchResultsHeader" id="searchActionsHeader">Actions</th>
+                      </tr>
+                    </table>
                   </div>
                 </div>
 
@@ -215,7 +217,11 @@
               </div>
               <div class="td-div" id="browseSelectBoxContainer">
                 <div id="browseSelectBorderDiv">
-                  Yo Bruh!
+                    <div id="searchEditorDiv">
+                      <pre id="searchEditor"></pre>
+                      <script src="/ace/demo/kitchen-sink/require.js"></script>
+                      <script src="/assets/js/setupEditor.js"></script>
+                    </div>
                 </div>
               </div>
             </div>

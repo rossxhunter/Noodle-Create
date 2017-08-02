@@ -979,6 +979,10 @@ tr:nth-child(even) {
     background-color: #f4f4f4;
 }
 
+#searchResultsTable tr:nth-child(even) {
+    background-color: #eeeeee;
+}
+
 #programListDiv {
     height: 300px;
     overflow:auto;
@@ -1132,10 +1136,11 @@ tr:nth-child(even) {
 
 #searchBarDiv {
     margin: 20px;
+    width: 90%;
 }
 
 #searchBar {
-    width: 90%;
+    width: 100%;
     box-sizing: border-box;
     border: 2px solid #ccc;
     border-radius: 4px;
@@ -1154,21 +1159,47 @@ tr:nth-child(even) {
 }
 
 .searchNameHeader {
-    width: 40%;
+    width: 30%;
 }
 .searchUserHeader {
-    width: 40%;
+    width: 30%;
+}
+.searchExtraHeader {
+    width: 20%;
 }
 .searchActionsHeader {
     width: 20%;
 }
 
 #searchResultsTable {
-    width: 90%;
+    font-size: 12pt;
+    width: 100%;
 }
 
 #searchResultsDiv {
+    display: none;
+    width: 90%;
     margin-left: 20px;
+}
+
+#searchNothingHere {
+    display: none;
+    width: 50%;
+    height: 50%;
+    margin: 0 auto;
+    top: 50%;
+    transform: translate(0%, 25%);
+}
+
+#emptyBowlImg {
+    width: 100%;
+    height: 100%;
+
+}
+
+#searchEditorDiv {
+    display: none;
+    width: 95%;
 }
 
 /*

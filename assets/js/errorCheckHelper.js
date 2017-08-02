@@ -50,7 +50,7 @@ function addRedLine(line) {
         editor.session.removeMarker(currentMarker);
     }
     currentMarker = editor.session.addMarker(new Range(line - 1, 0, line - 1, 1), "syntaxError", "fullLine");
-    $("#errorIndicator").attr("src", "assets/images/cross.png");
+    $("#errorIndicator").attr("src", "/assets/images/cross.png");
 }
 
 function unendedBlockError(blockStack) {
@@ -249,8 +249,9 @@ function isValid(type, line) {
             var p3 = /\s*\)\s*$/;
             var paramList = new RegExp(p1.source + param.source + "((" + p2.source + param.source + ")*)?" + p3.source);
             var reg = new RegExp(/^[a-zA-Z_][a-zA-Z0-9_]*/.source + paramList.source);
-            window.alert(line);
             return line.match(reg) != null;
+        case "library":
+            return line.match(/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/) != null;
         case "return":
             return line.match(/^return\s*.*$/) != null;
         case "returnVoid":

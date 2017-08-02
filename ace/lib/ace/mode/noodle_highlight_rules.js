@@ -10,7 +10,7 @@ define(function(require, exports, module) {
         // regexps are ordered -> the first match is used
 
         var keywords = (
-            "func|if|else|end|for|while|do|print|true|false|return|null|struct|define"
+            "func|if|else|end|for|while|do|print|true|false|return|null|struct|define|import"
         );
         var typeList = (
             "int|float|char|bool|string|T"

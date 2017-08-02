@@ -20,10 +20,10 @@ function setSize0() {
         html.clientHeight, html.scrollHeight, html.offsetHeight);
     var editorContainer = document.getElementById("editorContainer").style.height;
 
-    document.getElementById("editorBorderDiv").style.height = (height - 102)  + 'px';
-    document.getElementById("editorContainer").style.height = (height - 102)  + 'px';
-    document.getElementById("browsePaneBorderDiv").style.height = (height - 102)  + 'px';
-    document.getElementById("browsePaneContainer").style.height = (height - 102)  + 'px';
+    document.getElementById("editorBorderDiv").style.height = (height - 102) + 'px';
+    document.getElementById("editorContainer").style.height = (height - 102) + 'px';
+    document.getElementById("browsePaneBorderDiv").style.height = (height - 102) + 'px';
+    document.getElementById("browsePaneContainer").style.height = (height - 102) + 'px';
     document.getElementById("toolbarDiv").style.height = (height - 102) * 0.96 + 'px';
     document.getElementById("browseToolbarDiv").style.height = (height - 102) * 0.96 + 'px';
 
@@ -31,9 +31,12 @@ function setSize0() {
     var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
     editor.setOption("maxLines", numberOfLines);
     editor.setOption("minLines", numberOfLines);
+    searchEditor.setOption("maxLines", numberOfLines);
+    searchEditor.setOption("minLines", numberOfLines);
 
     var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
     document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+    document.getElementById("browseSelectBorderDiv").style.height = editorHeight + 'px';
 }
 
 /*
@@ -474,11 +477,6 @@ function newProgramClick() {
 function newLibraryClick() {
     isLib = true;
     window.open("/create", '_self', "CreatePage");
-    $('#searchBar').addEventListener('input', searchResultsUpdate);
-}
-
-function searchResultsUpdate() {
-    window.alert("HI!");
 }
 
 function newFileClick() {
@@ -549,8 +547,7 @@ function saveProgramToDB(name, isProgram) {
             if (status == "Duplicate") {
                 document.getElementById('fileNameCorrection').innerHTML = "Duplicate file name";
                 document.getElementById('fileNameCorrection').style.display = "block";
-            }
-            else {
+            } else {
                 isNew = false;
                 //openSaveConfirm();
                 document.getElementById("save").src = "/assets/images/saveClicked.png";
@@ -838,6 +835,7 @@ function setSize1() {
         $("#fullScreen").attr("src", "/assets/images/smallScreen.png");
         $("#mainBody").css("padding-top", "0px");
         $("#outputBorderDiv").css("height", "100%");
+        $("#browseSelectBorderDiv").css("height", "100%");
         $("#editorBorderDiv").css("height", "100%");
         $("#browsePaneBorderDiv").css("height", "100%");
         $("#editorDiv").css("height", "100%");
@@ -849,8 +847,11 @@ function setSize1() {
         var numberOfLines = Math.round(height / editor.renderer.lineHeight) - 1;
         editor.setOption("maxLines", numberOfLines);
         editor.setOption("minLines", numberOfLines);
+        searchEditor.setOption("maxLines", numberOfLines);
+        searchEditor.setOption("minLines", numberOfLines);
         var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
         document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+        document.getElementById("browseSelectBorderDiv").style.height = editorHeight + 'px';
         document.getElementById("toolbarDiv").style.height = height * 0.96 + 'px';
         document.getElementById("browseToolbarDiv").style.height = height * 0.96 + 'px';
     });
@@ -865,6 +866,7 @@ function setSize2() {
     $("#fullScreen").attr("src", "/assets/images/fullScreen.png");
     $('#navbar').fadeIn('slow', function() {
         $("#outputBorderDiv").css("height", "100%");
+        $("#browseSelectBorderDiv").css("height", "100%");
         $("#editorBorderDiv").css("height", "100%");
         $("#browsePaneBorderDiv").css("height", "100%");
         document.getElementById("editorBorderDiv").style.height = (height - 102) + 'px';
@@ -875,8 +877,11 @@ function setSize2() {
         var numberOfLines = Math.round(editorBorderDiv / editor.renderer.lineHeight) - 1;
         editor.setOption("maxLines", numberOfLines);
         editor.setOption("minLines", numberOfLines);
+        searchEditor.setOption("maxLines", numberOfLines);
+        searchEditor.setOption("minLines", numberOfLines);
         var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
         document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+        document.getElementById("browseSelectBorderDiv").style.height = editorHeight + 'px';
         document.getElementById("toolbarDiv").style.height = (height - 102) * 0.96 + 'px';
         document.getElementById("browseToolbarDiv").style.height = (height - 102) * 0.96 + 'px';
     });
@@ -895,6 +900,80 @@ function fullScreen() {
 function libraryClick() {
     $('#mainTableDiv').css('display', 'none');
     $('#browseDiv').css('display', 'block');
+    var searchBar = document.getElementById("searchBar");
+    searchBar.addEventListener("input", searchResultsUpdate);
+}
+
+function searchResultsUpdate() {
+    var searchQuery = $('#searchBar').val();
+    if (searchQuery == "") {
+        $("#searchResultsDiv").css('display', 'none');
+        $("#searchNothingHere").css('display', 'none');
+        return;
+    }
+    $.ajax({
+        async: false,
+        data: {
+            "name": searchQuery
+        },
+        type: "POST",
+        url: "/db/search.php",
+        success: function(status) {
+            if (status == "None") {
+                populateSearchResults([]);
+            }
+            var res = JSON.parse(status);
+            populateSearchResults(res);
+        }
+    });
+}
+
+function populateSearchResults(res) {
+    var table = document.getElementById("searchResultsTable");
+    $("#searchResultsTable").find("tr:gt(0)").remove();
+    for (var i = 0; i < res.length; i++) {
+        var row = table.insertRow(-1);
+        var cell1 = row.insertCell(0);
+        var cell2 = row.insertCell(1);
+        var cell3 = row.insertCell(2);
+        var cell4 = row.insertCell(3);
+        cell1.innerHTML = res[i]['name'];
+        cell2.innerHTML = res[i]['username'];
+        cell3.innerHTML = "stuff";
+        cell4.innerHTML = "<span onclick='viewSearchCode(this)' class='actionButton'>View</span>";
+        cell4.innerHTML = cell4.innerHTML + "<span onclick='' class='actionButton'>Run</span>";
+        cell4.innerHTML = cell4.innerHTML + "<span onclick='' class='actionButton'>Import</span>";
+    }
+    if (res.length == 0) {
+        $("#searchResultsDiv").css('display', 'none');
+        $("#searchNothingHere").css('display', 'block');
+    } else {
+        $("#searchResultsDiv").css('display', 'block');
+        $("#searchNothingHere").css('display', 'none');
+    }
+}
+
+function viewSearchCode(cell) {
+    var name = cell.parentNode.parentNode.cells[0].innerHTML;
+    var user = cell.parentNode.parentNode.cells[1].innerHTML;
+    $.ajax({
+        async: false,
+        data: {
+            "user": user,
+            "name": name
+        },
+        type: "POST",
+        url: "/db/getProgramLibrary.php",
+        success: function(status) {
+            var res = JSON.parse(status);
+            displaySearchCode(res['code']);
+        }
+    });
+}
+
+function displaySearchCode(code) {
+    searchEditor.setValue(code, 1);
+    $("#searchEditorDiv").css('display', 'block');
 }
 
 function pencilClick() {
@@ -936,9 +1015,9 @@ function noodle(code) {
         shouldReturn = false;
         variables.push(new variable("T", "null", null));
         for (var i = 0; i < globalLines.length; i++) {
-            execute(arrayOfLines, globalLines[i] - 1, globalLines[i]);
+            execute(linesArray, globalLines[i] - 1, globalLines[i]);
         }
-        execute(arrayOfLines, mainFunction.start - 1, mainFunction.end - 1);
+        execute(linesArray, mainFunction.start - 1, mainFunction.end - 1);
     } else {
         $("#errorIndicator").attr("src", "/assets/images/cross.png");
     }
@@ -1094,18 +1173,30 @@ function removeBlankEntries(expList) {
 
 var editor;
 var previewEditor;
+var searchEditor;
 
 function setEditor(e) {
     editor = e;
     editor.addEventListener("click", editorClick);
     editor.addEventListener("input", editorEdited);
+    editor.addEventListener('keydown', function(ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+    });
 }
+
+
 
 function setPreviewEditor(e) {
     previewEditor = e;
 }
 
+function setSearchEditor(e) {
+    searchEditor = e;
+}
+
 function editorEdited() {
+
     document.getElementById("save").src = "/assets/images/save.png";
 }
 

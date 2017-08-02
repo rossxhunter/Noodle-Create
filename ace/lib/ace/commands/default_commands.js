@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2010, Ajax.org B.V.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of Ajax.org B.V. nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -130,7 +130,7 @@ exports.commands = [{
 }, {
     name: "foldOther",
     bindKey: bindKey("Alt-0", "Command-Option-0"),
-    exec: function(editor) { 
+    exec: function(editor) {
         editor.session.foldAll();
         editor.session.unfold(editor.selection.getAllRanges());
     },
@@ -163,13 +163,13 @@ exports.commands = [{
         if (editor.selection.isEmpty())
             editor.selection.selectWord();
         else
-            editor.findNext(); 
+            editor.findNext();
     },
     readOnly: true
 }, {
     name: "selectOrFindPrevious",
     bindKey: bindKey("Alt-Shift-K", "Ctrl-Shift-G"),
-    exec: function(editor) { 
+    exec: function(editor) {
         if (editor.selection.isEmpty())
             editor.selection.selectWord();
         else
@@ -243,7 +243,7 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "golinedown",
-    bindKey: bindKey("Down", "Down|Ctrl-N"),
+    bindKey: bindKey("Down", "Down"),
     exec: function(editor, args) { editor.navigateDown(args.times); },
     multiSelectAction: "forEach",
     scrollIntoView: "cursor",
@@ -508,6 +508,14 @@ exports.commands = [{
     bindKey: bindKey("Ctrl-Shift-Z|Ctrl-Y", "Command-Shift-Z|Command-Y"),
     exec: function(editor) { editor.redo(); }
 }, {
+    name: "save",
+    bindKey: bindKey("Ctrl-S", "Command-S"),
+    exec: function() { saveClick(); }
+}, {
+    name: "new",
+    bindKey: bindKey("Ctrl-N", "Command-N"),
+    exec: function() { newFileClick(); }
+},{
     name: "copylinesup",
     bindKey: bindKey("Alt-Shift-Up", "Command-Option-Up"),
     exec: function(editor) { editor.copyLinesUp(); },
@@ -545,7 +553,7 @@ exports.commands = [{
 }, {
     name: "cut_or_delete",
     bindKey: bindKey("Shift-Delete", null),
-    exec: function(editor) { 
+    exec: function(editor) {
         if (editor.selection.isEmpty()) {
             editor.remove("left");
         } else {

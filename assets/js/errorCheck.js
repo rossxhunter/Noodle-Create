@@ -6,12 +6,14 @@ var funcList = [];
 var uninitialisedVariables = [];
 var structs = [];
 var mainFunction;
-var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do", "null", "T", "struct", "define"];
+var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do", "null", "T", "struct", "define", "import"];
 var structStarted = false;
 var defineStarted = false;
+var importStarted = false;
 var globalLines = [];
 var validTypes;
 var validTypesWithoutArrays;
+var originalLength;
 
 //Main logic
 
@@ -19,6 +21,7 @@ function errorCheck(arrayOfLines, blockStack) {
     uninitialisedVariables.push(new uninitialisedVariable("T", "null", 1, 0, arrayOfLines.length));
     document.getElementById('noodleOutputBox').value = "";
     getStructs(arrayOfLines);
+    originalLength = arrayOfLines.length;
     var initialCorrect = true;
     for (var i = 0; i < arrayOfLines.length; i++) {
         var line = i + 1;
@@ -35,7 +38,7 @@ function errorCheck(arrayOfLines, blockStack) {
                 initialCorrect = false;
             }
             mainFunction = new mainFunc(i + 1, 0);
-        } else if (arrayOfLines[i].replace(/^\s+/, '').search(/func(\s*\(|\s)/) == 0) {
+        } else if (arrayOfLines[i].trim().search(/func(\s*\(|\s)/) == 0) {
             if (blockStack.length != 0) {
                 addError("Unexpected function on line " + line);
                 initialCorrect = false;
@@ -44,9 +47,13 @@ function errorCheck(arrayOfLines, blockStack) {
             if (!checkFunc(arrayOfLines[i], i + 1)) {
                 initialCorrect = false;
             }
-        } else if (arrayOfLines[i].replace(/^\s+/, '').search(/if\s*\(/) == 0) {
+        } else if (arrayOfLines[i].trim().search(/if\s*\(/) == 0) {
+            if (blockStack[blockStack.length - 1].type == "struct" || blockStack[blockStack.length - 1].type == "define" || blockStack[blockStack.length - 1].type == "import") {
+                addError("Unexpected if statement on line " + line);
+                initialCorrect = false;
+}
             blockStack.push(new codeBlock("if", i + 1));
-        } else if (arrayOfLines[i].replace(/^\s+/, '').search(/else\s+if\s*\(/) == 0) {
+        } else if (arrayOfLines[i].trim().search(/else\s+if\s*\(/) == 0) {
             var precedingBlock = blockStack.pop();
             if (precedingBlock.type != "else if" && precedingBlock.type != "if") {
                 addError("Unexpected else if on line " + line);
@@ -68,31 +75,42 @@ function errorCheck(arrayOfLines, blockStack) {
             }
             blockStack.push(new codeBlock("for", i + 1));
         } else if (arrayOfLines[i].replace(/^\s+/, '').search(/while\s*\(/) == 0) {
-            var precedingBlock = blockStack[blockStack.length - 1];
-            if (precedingBlock == "struct") {
-                addError("Cannot put while loop in a struct on line " + line);
+            if (blockStack[blockStack.length - 1].type == "struct" || blockStack[blockStack.length - 1].type == "define" || blockStack[blockStack.length - 1].type == "import") {
+                addError("Unexpected while loop on line " + line);
                 initialCorrect = false;
             }
             blockStack.push(new codeBlock("while", i + 1));
         } else if (arrayOfLines[i].replace(/^\s+/, '').search(/struct\s+.*/) == 0) {
+            if (blockStack.length != 0) {
+                addError("Unexpected struct on line " + line);
+                initialCorrect = false;
+            }
             if (!checkStruct(arrayOfLines[i], i + 1)) {
                 initialCorrect = false;
             }
             blockStack.push(new codeBlock("struct", i + 1));
+        } else if (arrayOfLines[i].trim().search(/import/) == 0) {
+            if (blockStack.length != 0) {
+                addError("Unexpected import on line " + line);
+                initialCorrect = false;
+            }
+            if (!checkImport(arrayOfLines[i], i + 1)) {
+                initialCorrect = false;
+            }
+            blockStack.push(new codeBlock("import", i + 1));
         } else if (arrayOfLines[i].trim().search(/define/) == 0) {
             if (blockStack.length != 0) {
                 addError("Unexpected define on line " + line);
                 initialCorrect = false;
             }
             blockStack.push(new codeBlock("define", i + 1));
-        } else if (arrayOfLines[i].replace(/^\s+/, '').search(/do\s+while\s*\(/) == 0) {
-            var precedingBlock = blockStack.pop();
-            if (precedingBlock == "struct") {
-                addError("Cannot put do while loop in a struct on line " + line);
+        } else if (arrayOfLines[i].trim().search(/do\s+while\s*\(/) == 0) {
+            if (blockStack[blockStack.length - 1].type == "struct" || blockStack[blockStack.length - 1].type == "define" || blockStack[blockStack.length - 1].type == "import") {
+                addError("Unexpected do while loop on line " + line);
                 initialCorrect = false;
             }
             blockStack.push(new codeBlock("do while", i + 1));
-        } else if (arrayOfLines[i].replace(/^\s+/, '').replace(/\s+$/, '').search(/^(return|return\s.*)$/) == 0) {
+        } else if (arrayOfLines[i].trim().search(/^(return|return\s.*)$/) == 0) {
             if (blockStack[0] == null) {
                 addError("Unexpected return statement on line " + line);
                 initialCorrect = false;
@@ -129,6 +147,7 @@ function errorCheck(arrayOfLines, blockStack) {
     for (var i = 0; i < arrayOfLines.length; i++) {
         isCorrect = isCorrect && checkLine(arrayOfLines[i].replace(/^\s+/, ''), i + 1);
     }
+
     return isCorrect;
 }
 
@@ -158,7 +177,7 @@ function getStructs(lines) {
 function checkLine(line, lineNumber) {
     var isCorrect = true;
     var error = "";
-    if (defineStarted && line.search(validTypes) != 0 && line.trim().match(/^end$/) == null) {
+    if (defineStarted && line.search(validTypes) != 0 && line.trim().match(/^end$/) == null && line.trim().match(/\/\/.*/) == null) {
         addError("Invalid global variable on line " + lineNumber);
         isCorrect = false;
     }
@@ -179,6 +198,9 @@ function checkLine(line, lineNumber) {
         isCorrect = checkFor(line, lineNumber);
     } else if (line.search(/(do\s+)?while\s*\(/) == 0) {
         isCorrect = checkWhile(line, lineNumber);
+    } else if (line.search(/import/) == 0) {
+        importStarted = true;
+        currentLevel += 1;
     } else if (line.search(/struct\s/) == 0) {
         if (currentLevel != 0) {
             addError("Unexpected struct on line " + lineNumber + ". Must be a top level declaration");
@@ -192,6 +214,7 @@ function checkLine(line, lineNumber) {
     } else if (line.replace(/\s/g, '').match(/^end$/) != null) {
         structStarted = false;
         defineStarted = false;
+        importStarted = false;
         if (currentLevel == 1) {
             var reqFunc = findFuncByLine(lineNumber);
             if (reqFunc != null) {
@@ -212,13 +235,16 @@ function checkLine(line, lineNumber) {
         currentLevel += 1;
         var args = getArgs(line);
         addArgsToVars(args, lineNumber);
-        //isCorrect = checkFunc(line, lineNumber);
-    } else if (line.match(/^(return|return\s.*)$/) != null) {
+        if (lineNumber > originalLength) {
+            checkFunc(line, lineNumber);
+        }
+    }
+    else if (line.trim().match(/^(return|return\s.*)$/) != null) {
         isCorrect = checkReturn(line, lineNumber);
     } else if (line.trim().search(/^.*\(.*\)$/) == 0) {
         isCorrect = checkFuncCall(line, lineNumber);
     }  else {
-        if (line.replace(/\s/g, '') != "" && line.match(/^\/\/.*$/) == null) {
+        if (line.replace(/\s/g, '') != "" && line.match(/^\/\/.*$/) == null && !importStarted) {
             isCorrect = false;
             addError("Unrecognised statement on line " + lineNumber);
         }
@@ -759,6 +785,64 @@ function checkStruct(line, lineNumber) {
     return true;
 }
 
+function checkImport(line, lineNumber) {
+    var i = lineNumber;
+    var blanksAndComments = 0;
+    while (i < linesArray.length && linesArray[i].trim() != "end") {
+        var lib = linesArray[i].trim();
+        if (lib == "" || lib.match(/^\/\/.*$/) != null) {
+            blanksAndComments += 1;
+        } else {
+            if (!isValid("library", lib)) {
+                var l = i + 1;
+                addError("Invalid library import on line " + l);
+                return false;
+            }
+            if (!libExists(lib)) {
+                var l = i + 1;
+                addError("Library doesn't exist on line " + l);
+                return false;
+            }
+        }
+        i += 1;
+    }
+    return true;
+}
+
+function libExists(lib) {
+    var user = lib.substr(0, lib.indexOf("/"));
+    var name = lib.substr(lib.indexOf("/") + 1);
+    var exists = true;
+    $.ajax({
+        async: false,
+        data: {
+            "user": user,
+            "name": name
+        },
+        type: "POST",
+        url: "/db/findLib.php",
+        success: function(status) {
+            if (status == "Not found") {
+                exists = false;
+            }
+            else {
+                var code = JSON.parse(status)['code'];
+                newLines = code.split(/\r?\n/);
+                var currentLength = linesArray.length;
+                linesArray = linesArray.concat(newLines);
+                addImportFuncs(newLines, currentLength);
+            }
+        }
+    });
+    return exists;
+}
+
+function addImportFuncs(newLines, currentLength) {
+    for (var i = 0; i < newLines.length; i++) {
+        checkLine(newLines[i], currentLength + i + 1);
+    }
+}
+
 function checkFunc(line, lineNumber) {
     if (!isValid("func", line)) {
         addError("Invalid function on line " + lineNumber);
@@ -806,7 +890,7 @@ function checkFuncCall(line, lineNumber) {
 }
 
 function checkReturn(line, lineNumber) {
-    if (!isValid("return", line)) {
+    if (!isValid("return", line.trim())) {
         addError("Invalid return statement on line " + lineNumber);
         return false;
     }
