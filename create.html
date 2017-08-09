@@ -20,6 +20,7 @@
   <script>
     $(document).ready(function() {
       checkSession();
+      isNew = true;
       if (sessionUser != null) {
         $('#welcome').hide();
         $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
@@ -166,10 +167,22 @@
                   <img onclick="libraryClick()" id="library" src="/assets/images/library.png" />
                   <span class="tooltiptext">Browse</span>
                 </div>
-                <img onclick="fullScreen()" id="fullScreen" src="/assets/images/fullScreen.png" />
-                <img onclick="find()" id="find" src="/assets/images/find.png" />
-                <img id="clean" src="/assets/images/clean.png" />
-                <img onclick="settingsClick()" id="settings" src="/assets/images/settings.png" />
+                <div class="tooltip">
+                  <img onclick="fullScreen()" id="fullScreen" src="/assets/images/fullScreen.png" />
+                  <span class="tooltiptext">Expand</span>
+                </div>
+                <div class="tooltip">
+                  <img onclick="find()" id="find" src="/assets/images/find.png" />
+                  <span class="tooltiptext">Find</span>
+                </div>
+                <div class="tooltip">
+                  <img id="clean" src="/assets/images/clean.png" />
+                  <span class="tooltiptext">Clean</span>
+                </div>
+                <div class="tooltip">
+                  <img onclick="settingsClick()" id="settings" src="/assets/images/settings.png" />
+                  <span class="tooltiptext">Settings</span>
+                </div>
                 <img id="errorIndicator" />
               </div>
               <div class="td-div" id="noodleOutputBoxContainer">
@@ -217,11 +230,11 @@
               </div>
               <div class="td-div" id="browseSelectBoxContainer">
                 <div id="browseSelectBorderDiv">
-                    <div id="searchEditorDiv">
-                      <pre id="searchEditor"></pre>
-                      <script src="/ace/demo/kitchen-sink/require.js"></script>
-                      <script src="/assets/js/setupEditor.js"></script>
-                    </div>
+                  <div id="searchEditorDiv">
+                    <pre id="searchEditor"></pre>
+                    <script src="/ace/demo/kitchen-sink/require.js"></script>
+                    <script src="/assets/js/setupEditor.js"></script>
+                  </div>
                 </div>
               </div>
             </div>

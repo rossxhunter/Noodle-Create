@@ -103,7 +103,12 @@ function getStructDefaultValue(varType) {
     var types = findStruct(varType).memberTypes;
     var defaultArray = [];
     for (var i = 0; i < types.length; i++) {
-        defaultArray.push(getDefaultValue(types[i]));
+        if (isStructType(types[i])) {
+            defaultArray.push(null);
+        }
+        else {
+            defaultArray.push(getDefaultValue(types[i]));
+        }
     }
     return defaultArray;
 }
@@ -129,7 +134,7 @@ function isOperand(char) {
     if (char == null) {
         return true;
     }
-    if (char.toString().match(/^(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|\[.*\])$/) != null) {
+    if (char.toString().match(/^(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|\[.*\])(,(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|\[.*\]))*$/) != null) {
         return true;
     }
     return false;
@@ -138,16 +143,38 @@ function isOperand(char) {
 function getLiteralExpList(expList, isBool, lineNumber) {
     var litExpList = [];
     for (var i = 0; i < expList.length; i++) {
-        if (isOperator(expList[i]) || isOperand(expList[i]) || expList[i] == "(" || expList[i] == ")" || expList[i] == "@fc") {
+        if (expList[i].match(/^\[.*\]$/) != null) {
+            var arrayWithoutBs = expList[i].substr(1, expList[i].length - 2);
+            var sp = arrayWithoutBs.split(/,/);
+            var type = getTypeOfVarsAndLits([sp[0]]);
+            expList[i] = createArray(expList[i], type, sp.length, lineNumber);
+        }
+        if (expList[i] == "null") {
+            litExpList.push(null);
+        }
+        else if (isOperator(expList[i]) || isOperand(expList[i]) || expList[i] == "(" || expList[i] == ")" || expList[i] == "@fc") {
             litExpList.push(expList[i]);
         } else if (expList[i].match(/.*\..*/) != null) {
             var structName = expList[i].substr(0, expList[i].indexOf("."))
             var s = getVarVal(structName, isBool, lineNumber);
             var type = findVar(structName).type;
             var struct = findStruct(type);
-            var memberName = expList[i].substr(expList[i].indexOf(".") + 1);
-            var m = getMemberVal(s, struct, memberName);
-            litExpList.push(m);
+            if (expList[i].match(/.*\[/) != null) {
+                var index = expList[i].substr(expList[i].indexOf("["));
+                index  = index.substr(1, index.length - 2);
+                index = evaluateExpression(index, "int", lineNumber);
+
+                expList[i] =  expList[i].substr(0, expList[i].indexOf("["));
+                var memberName = expList[i].substr(expList[i].indexOf(".") + 1);
+
+                var m = getMemberVal(s, struct, memberName);
+                litExpList.push(m[index]);
+            }
+            else {
+                var memberName = expList[i].substr(expList[i].indexOf(".") + 1);
+                var m = getMemberVal(s, struct, memberName);
+                litExpList.push(m);
+            }
         }
         else {
             var val = getVarVal(expList[i], isBool, lineNumber);
@@ -158,10 +185,31 @@ function getLiteralExpList(expList, isBool, lineNumber) {
     return litExpList;
 }
 
+function getArrayElem(a, i) {
+    var elems = a.toString().split(/,/g);
+    for (var j = 0; j < elems.length; j++) {
+        if (elems[j].charAt(0) == "[") {
+            elems[j] = elems[j].substr(1, elems[j].length - 1);
+        }
+        else if (elems[j].charAt(elems[j].length - 1) == "]") {
+            elems[j] = elems[j].substr(0, elems[j].length - 1);
+        }
+    }
+    return elems[i];
+}
+
 function getMemberVal(s, struct, m) {
     for (var i = 0; i < s.length; i++) {
         if (m == struct.memberNames[i]) {
             return s[i];
+        }
+    }
+}
+
+function getMemberTypeDec(s, m) {
+    for (var i = 0; i < s.memberNames.length; i++) {
+        if (s.memberNames[i] == m) {
+            return s.memberTypes[i];
         }
     }
 }
@@ -256,10 +304,10 @@ function getFuncReturnVal(name, args, fs, lineNumber) {
     var func = findFuncByName(name, fs, lineNumber);
     passedArgs = args;
     execute(linesArray, func.start - 1, func.end - 1);
-    if (func.type == "string") {
-        val = "\"" + val + "\"";
-    } else if (func.type == "char") {
-        val = "\'" + val + "\'";
+    if (returnV != null && func.type == "string") {
+        returnV = "\"" + returnV + "\"";
+    } else if (returnV != null && func.type == "char") {
+        returnV = "\'" + returnV + "\'";
     }
     return returnV;
 }
@@ -290,7 +338,7 @@ function getArgsFromCall(line) {
     args = args.substr(args.indexOf("("));
     args = args.substr(1, args.length - 2);
     args = args.trim();
-    args = args.split(/,/);
+    args = splitArgs(args);
     args = removeBlankEntries(args);
     if (args == null) {
         args = [];
@@ -326,6 +374,9 @@ function findVar(varName) {
 
 function removeSpacesAndParseType(varValue, varType) {
     //varValue = varValue.toString().replace(/\s/g, '');
+    if (varValue == null) {
+        return null;
+    }
     if (varType == "int") {
         return parseInt(varValue);
     } else if (varType == "float") {
@@ -391,4 +442,21 @@ String.prototype.replaceAt=function(index, replacement) {
 
 function removeQuotes(str) {
     return str.substr(1, str.length - 2);
+}
+
+function isStruct(v) {
+    return v.toString().match(/^(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|\[.*\])(,(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|\[.*\]))+$/) != null;
+}
+
+function addStructBraces(output, types) {
+    for (var i = 0; i < types.length; i++) {
+        if (types[i].match(/.*\[\]/) != null) {
+            output[i] = "[".concat(output[i]).concat("]");
+        }
+        else if (isStructType(types[i])) {
+            output[i] = "{".concat(output[i]).concat("}");
+        }
+    }
+    output = "{".concat(output).concat("}");
+    return output;
 }

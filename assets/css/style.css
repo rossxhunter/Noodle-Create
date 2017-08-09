@@ -122,7 +122,6 @@ li a {
     border-bottom-width: thick;
 }
 
-
 .userTabNotSelected:hover {
     background-color: rgba(79, 205, 205, 1);
     color: #ffffff;
@@ -517,6 +516,7 @@ li a {
     width: 20%;
 }
 
+
 /* Add Animation */
 
 @-webkit-keyframes animatetop {
@@ -592,14 +592,16 @@ li a {
     z-index: 20
 }
 
-#loginRegisterForm input:focus:invalid { /* when a field is considered invalid by the browser */
+#loginRegisterForm input:focus:invalid {
+    /* when a field is considered invalid by the browser */
     background: #fff url(../images/cross.png) no-repeat 90% center;
     background-size: 20px 20px;
     box-shadow: 0 0 5px #d45252;
     border-color: #b03535;
 }
 
-#loginRegisterForm input:required:valid { /* when a field is considered valid by the browser */
+#loginRegisterForm input:required:valid {
+    /* when a field is considered valid by the browser */
     background: #fff url(../images/tick.png) no-repeat 90% center;
     background-size: 20px 20px;
     box-shadow: 0 0 5px #5cd053;
@@ -610,25 +612,38 @@ li a {
     background: #d45252;
     border-radius: 3px 3px 3px 3px;
     color: white;
-    margin-left:8px;
+    margin-left: 8px;
     padding: 1px 6px;
-    z-index: 999; /* hints stay above all other elements */
-    position: absolute; /* allows proper formatting if hint is two lines */
-    margin-bottom:20px;
+    z-index: 999;
+    /* hints stay above all other elements */
+    position: absolute;
+    /* allows proper formatting if hint is two lines */
+    margin-bottom: 20px;
 }
 
 .form_hint::before {
-    color:#d45252;
+    color: #d45252;
     position: absolute;
-    top:1px;
-    left:-6px;
+    top: 1px;
+    left: -6px;
 }
 
-#loginRegisterForm input:focus + .form_hint {display: inline;}
-#loginRegisterForm input:required:valid + .form_hint {display: none; background: #28921f;}
-#loginRegisterForm input:required:valid + .form_hint::before {color:#28921f;}
+#loginRegisterForm input:focus+.form_hint {
+    display: inline;
+}
 
-*:focus {outline: none;}
+#loginRegisterForm input:required:valid+.form_hint {
+    display: none;
+    background: #28921f;
+}
+
+#loginRegisterForm input:required:valid+.form_hint::before {
+    color: #28921f;
+}
+
+*:focus {
+    outline: none;
+}
 
 #userMainBody {
     height: 80%;
@@ -641,20 +656,20 @@ li a {
 #optionsBarDiv {
     margin-top: 50px;
     width: 100%;
-    height:250px;
+    height: 250px;
 }
 
 #optionsBarTable {
     background-color: #fbfbfb;
     height: 100%;
-    float:left;
+    float: left;
 }
 
 #userSettingsDiv {
     margin-top: 50px;
     margin-left: 50px;
-    width:70%;
-    height:100%;
+    width: 70%;
+    height: 100%;
     float: left;
 }
 
@@ -703,12 +718,12 @@ li a {
 }
 
 #usernameTR {
-position: relative;
+    position: relative;
     height: 100px;
 }
 
 #usernameTD {
-    padding-left:20px;
+    padding-left: 20px;
     position: relative;
 }
 
@@ -769,11 +784,11 @@ position: relative;
 
 #gapTR {
     background-color: #ffffff;
-    height:20px;
+    height: 20px;
 }
 
 #changeTR {
-    padding-left:20px;
+    padding-left: 20px;
     height: 100%;
     width: 100%;
 }
@@ -825,11 +840,11 @@ position: relative;
 }
 
 #bowlAnimation:hover {
-    content:url("../images/fullBowl.png");
+    content: url("../images/fullBowl.png");
 }
 
 #leftSide {
-    float:left;
+    float: left;
     width: 20%;
     margin-left: 40px;
 }
@@ -841,7 +856,7 @@ position: relative;
     border-color: #79cdcd;
     padding: 10px;
     font-size: 12pt;
-    float:right;
+    float: right;
     margin-right: 40px;
 }
 
@@ -870,7 +885,7 @@ position: relative;
     border-color: #79cdcd;
     padding: 10px;
     font-size: 12pt;
-    float:right;
+    float: right;
     margin-right: 20px;
     margin-top: 28px;
 }
@@ -985,7 +1000,7 @@ tr:nth-child(even) {
 
 #programListDiv {
     height: 300px;
-    overflow:auto;
+    overflow: auto;
     margin-top: 40px;
     width: 95%;
 }
@@ -997,7 +1012,7 @@ tr:nth-child(even) {
 
 #libraryListDiv {
     height: 300px;
-    overflow:auto;
+    overflow: auto;
     margin-top: 40px;
     width: 95%;
 }
@@ -1028,9 +1043,11 @@ tr:nth-child(even) {
 .nameHeader {
     width: 40%;
 }
+
 .extraHeader {
     width: 40%;
 }
+
 .actionsHeader {
     width: 20%;
 }
@@ -1109,13 +1126,11 @@ tr:nth-child(even) {
 
 .tooltip .tooltiptext {
     visibility: hidden;
-
     background-color: #555555;
     color: #fff;
     text-align: center;
     border-radius: 2px;
     padding: 2px;
-
     /* Position the tooltip */
     position: absolute;
     z-index: 1;
@@ -1127,7 +1142,7 @@ tr:nth-child(even) {
 
 .tooltip:hover .tooltiptext {
     visibility: visible;
-     transition-delay:1s;
+    transition-delay: 1s;
 }
 
 #browseDiv {
@@ -1150,9 +1165,7 @@ tr:nth-child(even) {
     transition: width 0.4s ease-in-out;
 }
 
-#searchBar:focus {
-
-}
+#searchBar:focus {}
 
 .searchResultsHeader {
     font-size: 10pt;
@@ -1161,12 +1174,15 @@ tr:nth-child(even) {
 .searchNameHeader {
     width: 30%;
 }
+
 .searchUserHeader {
     width: 30%;
 }
+
 .searchExtraHeader {
     width: 20%;
 }
+
 .searchActionsHeader {
     width: 20%;
 }
@@ -1194,13 +1210,27 @@ tr:nth-child(even) {
 #emptyBowlImg {
     width: 100%;
     height: 100%;
-
 }
 
 #searchEditorDiv {
     display: none;
     width: 95%;
 }
+
+#userPageLink {
+    color: #79cdcd;
+}
+
+#userPageLink:visited {
+    text-decoration: none;
+    color: #79cdcd;
+}
+
+#userPageLink:hover {
+    text-decoration: underline;
+    color: #79cdcd;
+}
+
 
 /*
 @media screen and (max-width: 980px) {

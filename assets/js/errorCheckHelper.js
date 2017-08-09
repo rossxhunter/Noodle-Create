@@ -115,7 +115,7 @@ function updateVarScope(lineNumber, isEnd) {
     for (var i = 0; i < uninitialisedVariables.length; i++) {
         if (uninitialisedVariables[i].level == currentLevel && uninitialisedVariables[i].end == 0) {
             uninitialisedVariables[i].end = lineNumber - 1;
-            uninitialisedVariables.splice(i, 1);
+            //uninitialisedVariables.splice(i, 1);
 
         }
     }
@@ -210,11 +210,11 @@ function isKeyword(name) {
 function isValid(type, line) {
     switch (type) {
         case "print":
-            return line.match(/^print\s+(".*"|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
+            return line.match(/^print\s+(".*"|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
         case "printVar":
-            return line.match(/^print\s+[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
+            return line.match(/^print\s+([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*)\s*$/) != null;
         case "var":
-            return line.match(/^([a-zA-Z][a-zA-Z0-9_]*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null;
+            return line.match(/^([a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null;
         case "if":
             return line.match(/^(if|else\s+if|else)\s*\(.+\)\s*$/) != null;
         case "for":
@@ -224,12 +224,11 @@ function isValid(type, line) {
         case "struct":
             return line.match(/^struct\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
         case "member":
-            return line.match(/^(int|float|string|char|bool)((\[.*\])?)?\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
+            var reg = new RegExp(/^/.source + validTypes.source + /\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/.source);
+            return line.match(reg) != null;
         case "func":
             var start = /^func\s*/;
-            if (validTypes == undefined) {
-                validTypes = /(int|float|string|char|bool|T)((\[\])?)?/;
-            }
+            getStructs(linesArray);
             var p1 = /\(\s*/;
             var p2 = /\s*\)/;
             var p3 = /\s+/;
@@ -435,7 +434,7 @@ function findFuncInVar(v, fs) {
     for (var i = 0; i < fs.length; i++) {
         var args = fs[i].substr(fs[i].indexOf("("));
         args = args.substr(1, args.length - 2);
-        args = args.split(/,/g);
+        args = splitArgs(args);
         args = removeSpaces(args);
         if (v == fs[i].substr(0, fs[i].indexOf("(")).trim()) {
             if (args != "") {
@@ -446,28 +445,57 @@ function findFuncInVar(v, fs) {
     }
 }
 
+function splitArgs(args) {
+    var inArray = false;
+    var currentArray = "";
+    var result = [];
+    for (var i = 0; i < args.length; i++) {
+        if (args[i] == "[") {
+            inArray = true;
+        }
+        if (inArray) {
+            currentArray += args[i];
+        } else {
+            if (args[i] == ",") {
+                result.push(currentArray);
+                currentArray = "";
+            } else {
+                currentArray += args[i];
+            }
+        }
+        if (args[i] == "]") {
+            inArray = false;
+
+
+        }
+    }
+    result.push(currentArray);
+    return result;
+}
+
 function getTypeOfVarsAndLits(es, fs, lineNumber) {
     var evaluatedList = [];
     for (var i = 0; i < es.length; i++) {
         if (isOperand(es[i])) {
             if (es[i].match(/^.*(==|!=|<|>|<=|>=).*$/) != null) {
                 evaluatedList.push("pred");
-            } else if (es[i].match(/^[0-9]+$/) != null) {
-                evaluatedList.push("int");
-            } else if (es[i].match(/^[0-9]+(\.[0-9]+)?$/) != null) {
-                evaluatedList.push("float");
-            } else if (es[i].match(/^".*"$/) != null) {
-                evaluatedList.push("string");
-            } else if (es[i].match(/^'.*'$/) != null) {
-                evaluatedList.push("char");
-            } else if (es[i].match(/^(true|false)$/) != null) {
-                evaluatedList.push("bool");
+            } else if (es[i].match(/^\[.*]$/) != null) {
+                var withoutI = es[i].substr(1, es[i].length - 2);
+                var aType = getArrayElemType(withoutI);
+                var t = aType + "[]";
+                evaluatedList.push(t);
+            }
+            else {
+                evaluatedList.push(getArrayElemType(es[i]));
             }
         } else {
             var varWithoutIndex = es[i];
             if (es[i].match(/.*\[.*\]/) != null) {
                 varWithoutIndex = es[i].substr(0, es[i].indexOf("["));
             } else if (es[i].match(/.*\..*/) != null) {
+                varWithoutIndex = es[i].substr(0, es[i].indexOf("."));
+            }
+            if (varWithoutIndex.match(/.*\..*/) != null) {
                 varWithoutIndex = es[i].substr(0, es[i].indexOf("."));
             }
             var varEntry = findUnVar(varWithoutIndex);
@@ -481,7 +509,12 @@ function getTypeOfVarsAndLits(es, fs, lineNumber) {
                 return;
             }
             var type = varEntry.type;
-            if (es[i].match(/.*\[.*\]/) != null) {
+            if (es[i].match(/.*\..*\[.*\]/) != null) {
+                var withoutIndex = es[i].substr(0, es[i].indexOf("["));
+                var m = withoutIndex.substr(withoutIndex.indexOf(".") + 1);
+                type = getMemberType(varWithoutIndex, m);
+                type = type.substr(0, type.indexOf("["));
+            } else if (es[i].match(/.*\[.*\]/) != null) {
                 if (type == "string") {
                     type = "char";
                 } else {
@@ -495,6 +528,20 @@ function getTypeOfVarsAndLits(es, fs, lineNumber) {
         }
     }
     return evaluatedList;
+}
+
+function getArrayElemType(o) {
+    if (o.match(/^[0-9]+$/) != null) {
+        return "int";
+    } else if (o.match(/^[0-9]+(\.[0-9]+)?$/) != null) {
+        return "float";
+    } else if (o.match(/^".*"$/) != null) {
+        return "string";
+    } else if (o.match(/^'.*'$/) != null) {
+        return "char";
+    } else if (o.match(/^(true|false)$/) != null) {
+        return "bool";
+    }
 }
 
 function getMemberType(s, m) {

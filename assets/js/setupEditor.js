@@ -24,6 +24,17 @@ function setupEditor() {
             row: 1,
             column: 0
         }, "func main()\n  //Code here!\nend")
+        editor.commands.addCommand({
+            name: 'new',
+            bindKey: {
+                win: 'Ctrl-Shift-N',
+                mac: 'Command-Shift-N'
+            },
+            exec: function() {
+                newFileClick();
+            },
+            readOnly: true
+        });
         if (isLib) {
             editor.setValue("//Code here!", 1);
         }

@@ -14,6 +14,7 @@ var currentStepper = [];
 var target = [];
 var increment = [];
 var equalityStack = [];
+var funcBlockCount = 0;
 var whileCount = [];
 var operatorList = ["+", "-", "*", "/", "&&", "||", "==", "<=", ">=", "!=", "<", ">"];
 var operatorPrecedences = {
@@ -40,12 +41,13 @@ function decode(line, lineNumber) {
             decodePrint(line, lineNumber + 1);
         } else if (line.search(validTypes) == 0) {
             decodeVarDec(line, lineNumber + 1);
-        } else if (line.match(/^([a-zA-Z][a-zA-Z0-9_]*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null) {
+        } else if (line.match(/^([a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null) {
             decodeVarAss(line, lineNumber + 1);
         } else if (line.search(/if\s*\(/) == 0) {
             shouldSkip = !decodeIf(line, lineNumber);
             satisfied = !shouldSkip;
             codeBlockStack.push("if");
+            funcBlockCount += 1;
         } else if (line.search(/else\s+if\s*\(/) == 0) {
             shouldSkip = true;
             codeBlockStack.pop();
@@ -59,10 +61,12 @@ function decode(line, lineNumber) {
             endStack.push(false);
             finishStack.push(true);
             codeBlockStack.push("for");
+            funcBlockCount += 1;
         } else if (line.match(/(do\s+)?while\s*\(/) != null) {
             shouldSkip = !decodeWhile(line, lineNumber);
             endStack.push(false);
             codeBlockStack.push("while");
+            funcBlockCount += 1;
             if (firstWhile(lineNumber)) {
                 whileCount.push(new whileCounter(lineNumber, 0, false, 0));
                 if (line.match(/do\s+while\s*\(/) != null) {
@@ -73,12 +77,15 @@ function decode(line, lineNumber) {
                 whileCount[whileCount.length - 1].ended = true;
             }
         } else if (line.trim().match(/^(return|return\s.*)$/) != null) {
+            for (var i = 0; i < funcBlockCount; i++) {
+                codeBlockStack.pop();
+            }
             decodeReturn(line, lineNumber);
         } else if (line.search(/\s*func\s+main\s*\(\s*\)\s*/) == 0) {
 
         } else if (line.replace(/^\s+/, '').search(/func(\s*\(|\s)/) == 0) {
             decodeFunc(line);
-        } else if (line.trim().search(/^.*\(.*\)$/) == 0) {
+        } else if (line.trim().search(/^.*\(.*\)$/) == 0 && line.trim().match(/^\/\/.*$/) == null) {
             decodeFuncCall(line, lineNumber);
         } else if (line.trim().match(/^end$/) != null) {
             if (codeBlockStack[codeBlockStack.length - 1] == "for") {
@@ -138,41 +145,54 @@ function decodePrint(line, lineNumber) {
             }
             if (v.type.match(/.*\[\]/) == null) {
                 output = array[index];
-            }
-            else {
+            } else {
                 if (array[index] == undefined || array[index] == null) {
                     output = "null";
-                }
-                else {
+                } else {
                     output = array[index];
                 }
+            }
+            var indexType = v.type.substr(0, v.type.indexOf("["));
+            if (findStruct(indexType) != null) {
+                var s = findStruct(indexType);
+                varValue = addStructBraces(varValue, s.memberTypes);
             }
         } else if (output.match(/.*\..*/) != null) {
             var s = output.substr(0, output.indexOf("."));
             var v = findVar(s);
             var struct = findStruct(v.type);
-            var m = getMemberVal(v.value, struct, output.substr(output.indexOf(".") + 1));
+            var mem = output.substr(output.indexOf(".") + 1)
+            var m = getMemberVal(v.value, struct, mem);
+            var memType = getMemberTypeDec(struct, mem);
             output = m;
-        }
-        else {
-            var v = findVar(output);
-            output = v.value;
-            if (v.type.match(/.*\[.*\]/) != null) {
-                output = "[".concat(output).concat("]");
+            if (isStructType(memType)) {
+                output = addStructBraces(output, memType);
             }
-            else if (isStructType(v.type)) {
-                output = "{".concat(output).concat("}");
+        } else {
+            if (output.match(/.*\(\s*.*?\s*\)/) != null) {
+                var f = output.substr(0, output.indexOf("("));
+                var func = findFuncByName(f, [output], lineNumber);
+                output = evaluateExpression(output, func.type, lineNumber);
+            } else {
+                var v = findVar(output);
+                output = v.value;
+                if (v.type.match(/.*\[.*\]/) != null) {
+                    output = "[".concat(output).concat("]");
+                } else if (isStructType(v.type)) {
+                    var s = findStruct(v.type);
+                    output = addStructBraces(output, s.memberTypes);
+                }
             }
         }
     } else {
         output = output.substr(1, output.length - 2);
         var i = 0;
         while (i < output.length) {
-            if (output.charAt(i) == '$') {
+            if (output.charAt(i) == '{') {
                 i += 1;
                 var varName = output.substr(i, output.length - i);
-                varName = varName.match(/^(.*?)\$/)[1];
-                while (output.charAt(i) != '$') {
+                varName = varName.match(/^(.*?)\}/)[1];
+                while (output.charAt(i) != '}') {
                     i += 1;
                 }
 
@@ -188,34 +208,48 @@ function decodePrint(line, lineNumber) {
                     }
                     if (v.type.match(/.*\[\]/) == null) {
                         var varValue = array[index];
-                    }
-                    else {
+                    } else {
                         if (array[index] == undefined || array[index] == null) {
                             var varValue = "null";
-                        }
-                        else {
+                        } else {
                             var varValue = array[index];
                         }
+                    }
+                    var indexType = v.type.substr(0, v.type.indexOf("["));
+                    if (findStruct(indexType) != null) {
+                        var s = findStruct(indexType);
+                        varValue = addStructBraces(varValue, s.memberTypes);
                     }
                 } else if (varName.match(/.*\..*/) != null) {
                     var s = varName.substr(0, varName.indexOf("."));
                     var v = findVar(s);
                     var struct = findStruct(v.type);
-                    var m = getMemberVal(v.value, struct, varName.substr(varName.indexOf(".") + 1));
+                    var mem = output.substr(output.indexOf(".") + 1);
+                    mem = mem.substr(0, mem.length - 1);
+                    var m = getMemberVal(v.value, struct, mem);
+                    var memType = getMemberTypeDec(struct, mem);
                     varValue = m;
-                }
-                else {
-                    var v = findVar(varName);
-                    var varValue = v.value;
-                    if (v.type.match(/.*\[.*\]/) != null) {
-                        varValue = "[".concat(varValue).concat("]");
+                    if (isStructType(memType)) {
+                        varValue = addStructBraces(varValue, memType);
                     }
-                    else if (isStructType(v.type)) {
-                        varValue = "{".concat(varValue).concat("}");
+                } else {
+                    if (varName.match(/.*\(\s*.*?\s*\)/) != null) {
+                        var f = varName.substr(0, varName.indexOf("("));
+                        var func = findFuncByName(f, [varName], lineNumber);
+                        varValue = evaluateExpression(varName, func.type, lineNumber);
+                    } else {
+                        var v = findVar(varName);
+                        var varValue = v.value;
+                        if (v.type.match(/.*\[.*\]/) != null) {
+                            varValue = "[".concat(varValue).concat("]");
+                        } else if (isStructType(v.type)) {
+                            var s = findStruct(v.type);
+                            varValue = addStructBraces(varValue, s.memberTypes);
+                        }
                     }
                 }
 
-                var replace = "$" + varName + "$";
+                var replace = "{" + varName + "}";
                 var re = new RegExp(escapeRegExp(replace), "g");
                 output = output.replace(re, varValue.toString());
                 i = i - 2 - varName.length + varValue.toString().length;
@@ -225,7 +259,7 @@ function decodePrint(line, lineNumber) {
                     var line2 = output.substr(i + 2, output.length - i - 2);
                     output = line1 + '\n' + line2;
                     i -= 2;
-                } else if (output.charAt(i + 1) == '$') {
+                } else if (output.charAt(i + 1) == '{' || output.charAt(i + 1) == '}') {
                     var part1 = output.substr(0, i);
                     var part2 = output.substr(i + 1, output.length - i - 1);
                     output = part1 + part2;
@@ -254,8 +288,7 @@ function decodeVarDec(line, lineNumber) {
         arrayLength = arrayLength.substr(1, arrayLength.length - 2);
         if (arrayLength == "") {
             arrayLength = 0;
-        }
-        else {
+        } else {
             arrayLength = evaluateExpression(arrayLength, "int", lineNumber);
             checkArrayLength(arrayLength, lineNumber);
         }
@@ -263,20 +296,17 @@ function decodeVarDec(line, lineNumber) {
             if (varValue.match(/\[.*/) != null) {
                 var arrayType = varType.substr(0, varType.indexOf("["));
                 varValue = createArray(varValue, arrayType, arrayLength, lineNumber);
-            }
-            else {
+            } else {
                 varValue = evaluateExpression(varValue, varType, lineNumber);
             }
-        }
-        else {
+        } else {
             varValue = getDefaultValue(varType);
         }
     } else {
         if (varValue != null) {
             if (isStructType(varType)) {
                 varValue = decodeStruct(varType, varName, varValue, lineNumber);
-            }
-            else {
+            } else {
                 varValue = evaluateExpression(varValue, varType, lineNumber);
                 varValue = removeSpacesAndParseType(varValue, varType);
             }
@@ -292,14 +322,19 @@ function decodeVarDec(line, lineNumber) {
 }
 
 function decodeStruct(varType, varName, varValue, lineNumber) {
-    var vals = [];
-    varValue = varValue.substr(1, varValue.length - 2);
-    var mems = varValue.split(",");
-    var struct = findStruct(varType);
-    for (var i = 0; i < mems.length; i++) {
-        mems[i] = evaluateExpression(mems[i], struct.memberTypes[i], lineNumber);
+    varValue = varValue.trim();
+    if (varValue.match(/^\(\s*(.*)\s*(,\s*(.*))*\s*\)$/) != null) {
+        varValue = varValue.substr(1, varValue.length - 2);
+        var mems = getMembersFromDec(varValue);
+        var struct = findStruct(varType);
+        for (var i = 0; i < mems.length; i++) {
+            mems[i] = evaluateExpression(mems[i], struct.memberTypes[i], lineNumber);
+        }
+        return mems;
+    } else {
+        var mems = evaluateExpression(varValue, varType, lineNumber);
+        return mems;
     }
-    return mems;
 }
 
 function createArray(array, type, length, line) {
@@ -320,37 +355,67 @@ function decodeVarAss(line, lineNumber) {
     var varName = line.match(/^[^=\s]*/)[0];
     var varValue = line.match(/=\s*(.*)$/)[1];
     if (varName.match(/.*\[/) != null) {
-
         var varWithoutIndex = varName.substr(0, varName.indexOf("["));
         var index = varName.substr(varName.indexOf("["));
         index = index.substr(1, index.length - 2);
         index = evaluateExpression(index, "int", lineNumber);
-        var oldVar = findVar(varWithoutIndex);
-        if (oldVar.type.match(/.*\[\]/) == null && index >= oldVar.value.length) {
-            addRuntimeError("Array index out of bounds on line " + lineNumber);
+        if (varWithoutIndex.match(/.*\..*/) != null) {
+            var m = varWithoutIndex.substr(varWithoutIndex.indexOf(".") + 1);
+            var s = varWithoutIndex.substr(0, varWithoutIndex.indexOf("."));
+            var struct = findVar(s);
+            var t = findMemberType(struct.type, m);
+            varWithoutIndex = s;
+            var oldVar = findVar(varWithoutIndex);
+            if (t.match(/.*\[\]/) == null && index >= t.length) {
+                addRuntimeError("Array index out of bounds on line " + lineNumber);
+            }
+            var varType = t;
+            var isString = false
+            if (varType == "string") {
+                varType = "char";
+                isString = true;
+            } else {
+                varType = varType.substr(0, varType.indexOf("["));
+            }
+            varValue = evaluateExpression(varValue, varType, lineNumber);
+            varValue = removeSpacesAndParseType(varValue, varType);
+            var str = findStruct(struct.type);
+            var oldVarValue = getMemberVal(struct.value, str, m);
+            if (isString) {
+                oldVarValue = oldVarValue.replaceAt(index, varValue);
+            } else {
+                oldVarValue[index] = varValue;
+            }
+            updateStructMem(varWithoutIndex, m, oldVarValue);
+            var newVar = getMemberVal(findVar(varWithoutIndex).value, str, m);
+            //document.getElementById('noodleOutputBox').value += newVar.name + index;
+            document.getElementById('noodleOutputBox').value += newVar[index];
+        } else {
+            var oldVar = findVar(varWithoutIndex);
+            if (oldVar.type.match(/.*\[\]/) == null && index >= oldVar.value.length) {
+                addRuntimeError("Array index out of bounds on line " + lineNumber);
+            }
+            var varType = findVar(varWithoutIndex).type;
+            var isString = false
+            if (varType == "string") {
+                varType = "char";
+                isString = true;
+            } else {
+                varType = varType.substr(0, varType.indexOf("["));
+            }
+            varValue = evaluateExpression(varValue, varType, lineNumber);
+            varValue = removeSpacesAndParseType(varValue, varType);
+            var oldVarValue = oldVar.value;
+            if (isString) {
+                oldVarValue = oldVarValue.replaceAt(index, varValue);
+            } else {
+                oldVarValue[index] = varValue;
+            }
+            updateVarVal(varWithoutIndex, oldVarValue);
+            var newVar = findVar(varWithoutIndex);
+            document.getElementById('noodleOutputBox').value += newVar.name + index;
+            document.getElementById('noodleOutputBox').value += newVar.value[index];
         }
-        var varType = findVar(varWithoutIndex).type;
-        var isString = false
-        if (varType == "string") {
-            varType = "char";
-            isString = true;
-        }
-        else {
-            varType = varType.substr(0, varType.indexOf("["));
-        }
-        varValue = evaluateExpression(varValue, varType, lineNumber);
-        varValue = removeSpacesAndParseType(varValue, varType);
-        var oldVarValue = oldVar.value;
-        if (isString) {
-            oldVarValue= oldVarValue.replaceAt(index, varValue);
-        }
-        else {
-            oldVarValue[index] = varValue;
-        }
-        updateVarVal(varWithoutIndex, oldVarValue);
-        var newVar = findVar(varWithoutIndex);
-        document.getElementById('noodleOutputBox').value += newVar.name + index;
-        document.getElementById('noodleOutputBox').value += newVar.value[index];
     } else {
         if (varName.match(/.*\..*/) != null) {
             var m = varName.substr(varName.indexOf(".") + 1);
@@ -375,8 +440,7 @@ function decodeVarAss(line, lineNumber) {
             if (varValue != null) {
                 if (isStructType(varType)) {
                     varValue = decodeStruct(varType, varName, varValue, lineNumber);
-                }
-                else {
+                } else {
                     varValue = evaluateExpression(varValue, varType, lineNumber);
                     varValue = removeSpacesAndParseType(varValue, varType);
                 }
@@ -386,8 +450,7 @@ function decodeVarAss(line, lineNumber) {
         }
         if (t != null) {
             updateStructMem(varName, m, varValue);
-        }
-        else {
+        } else {
             updateVarVal(varName, varValue);
         }
         var newVar = findVar(varName);
@@ -484,29 +547,28 @@ function evaluateExpression(exp, type, lineNumber) {
         funcs = [];
     }
     var funcNames = removeArgs(funcs);
-    var arrays = exp.match(/[a-zA-Z_][a-zA-Z0-9_]*\[.*?\]/g);
+    var arrays = exp.match(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[.*?\]/g);
     if (arrays == null) {
         arrays = [];
     }
     var expWithoutFuncsAndArrays = exp.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*\s*\)/g, '');
-    expWithoutFuncsAndArrays = expWithoutFuncsAndArrays.replace(/[a-zA-Z_][a-zA-Z0-9_]*\[.*?\]/g, '');
+    expWithoutFuncsAndArrays = expWithoutFuncsAndArrays.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[.*?\]/g, '');
     var expList = exp.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)/g, '@fc');
-    expList = expList.replace(/[a-zA-Z_][a-zA-Z0-9_]*\[.*?\]/g, '@a');
+    expList = expList.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[.*?\]/g, '@a');
     expList = expList.split(/(\+|-|\*|\/|\(|\)|&&|\|\||==|<=|>=|!=|<|>)/g);
     expList = removeSpaces(expList);
     expList = removeBlankEntries(expList);
     expList = putArraysBackInExpList(expList, arrays);
     expList = getNegativesAndSubraction(expList);
     var literalExpList = getLiteralExpList(expList, type == "bool", lineNumber);
-
     literalExpList = replaceFuncsWithVals(literalExpList, funcNames, funcs, lineNumber);
     if (literalExpList.length == 1) {
         var res = literalExpList[0];
-        if (type == "string") {
-            res = removeQuotes(res);
+        if (type == "string" && literalExpList[0] != null) {
+            //res = removeQuotes(res);
             res = replaceEscapes(res);
-        } else if (type == "char") {
-            res = removeQuotes(res);
+        } else if (type == "char" && literalExpList[0] != null) {
+            //res = removeQuotes(res);
             if (res == "\\n") {
                 res = '\n';
             }
@@ -518,7 +580,7 @@ function evaluateExpression(exp, type, lineNumber) {
     var operatorStack = [];
     while (i < literalExpList.length) {
         if (isOperand(literalExpList[i])) {
-            if (literalExpList[i] != null && literalExpList[i].toString().match(/\".*\"/) != null) {
+            if (literalExpList[i] != null && literalExpList[i].toString().match(/\".*\"/) != null && !isStruct(literalExpList[i])) {
                 literalExpList[i] = removeQuotes(literalExpList[i]);
             }
             operandStack.push(literalExpList[i]);
@@ -534,11 +596,18 @@ function evaluateExpression(exp, type, lineNumber) {
                 op2 = castOp(op2);
                 if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
-                } else if (type == "bool" && op != "&&" && op != "||") {
-                    var expType = getTypeOfVarsAndLits([op1.toString()])[0];
-                    operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
                 } else {
-                    operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                    if (op1 == null || op2 == null) {
+                        var l = lineNumber + 1
+                        addRuntimeError("Cannot use a null value as part of an expression on line " + l);
+                        return;
+                    }
+                    if (type == "bool" && op != "&&" && op != "||") {
+                        var expType = getTypeOfVarsAndLits([op1.toString()])[0];
+                        operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
+                    } else {
+                        operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                    }
                 }
             }
             operatorStack.push(literalExpList[i]);
@@ -552,11 +621,18 @@ function evaluateExpression(exp, type, lineNumber) {
                 op2 = castOp(op2);
                 if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
                     operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
-                } else if (type == "bool" && op != "&&" && op != "||") {
-                    var expType = getTypeOfVarsAndLits([op1.toString()])[0];
-                    operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
                 } else {
-                    operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                    if (op1 == null || op2 == null) {
+                        var l = lineNumber + 1
+                        addRuntimeError("Cannot use a null value as part of an expression on line " + l);
+                        return;
+                    }
+                    if (type == "bool" && op != "&&" && op != "||") {
+                        var expType = getTypeOfVarsAndLits([op1.toString()])[0];
+                        operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
+                    } else {
+                        operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+                    }
                 }
             }
             if (operatorStack[operatorStack.length - 1] == "(") {
@@ -573,11 +649,18 @@ function evaluateExpression(exp, type, lineNumber) {
         op2 = castOp(op2);
         if (op == "==" || op == "<=" || op == ">=" || op == "!=" || op == "<" || op == ">") {
             operandStack.push(evaluateSingleExpression(op, op1, op2, "pred"));
-        } else if (type == "bool" && op != "&&" && op != "||") {
-            var expType = getTypeOfVarsAndLits([op1.toString()])[0];
-            operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
         } else {
-            operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+            if (op1 == null || op2 == null) {
+                var l = lineNumber + 1
+                addRuntimeError("Cannot use a null value as part of an expression on line " + l);
+                return;
+            }
+            if (type == "bool" && op != "&&" && op != "||") {
+                var expType = getTypeOfVarsAndLits([op1.toString()])[0];
+                operandStack.push(evaluateSingleExpression(op, op1, op2, expType));
+            } else {
+                operandStack.push(evaluateSingleExpression(op, op1, op2, type));
+            }
         }
     }
     result = operandStack.pop();

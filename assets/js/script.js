@@ -4,7 +4,7 @@ var startedCoding = false;
 var registerValid = true;
 var loginValid = true;
 var sessionUser;
-var isNew = true;
+var isNew;
 var fileName;
 var fileNameCurrentlyEditing;
 var isLib = false;
@@ -127,7 +127,8 @@ function checkProgramLibrary() {
             async: false,
             data: {
                 "user": user,
-                "name": name
+                "name": name,
+                "isProgram": "both"
             },
             type: "POST",
             url: "/db/getProgramLibrary.php",
@@ -346,11 +347,13 @@ function deleteDelete() {
 function openPreview(cell) {
     var user = GetUserURLParameter('username');
     var name = cell.parentNode.parentNode.cells[0].innerHTML;
+    var isProgram = document.getElementById("programs").style.display == "block";
     $.ajax({
         async: false,
         data: {
             "user": user,
-            "name": name
+            "name": name,
+            "isProgram": isProgram
         },
         type: "POST",
         url: "/db/getProgramLibrary.php",
@@ -483,6 +486,7 @@ function newFileClick() {
     editor.setValue("func main()\n  //Code here!\nend", 1);
     isNew = true;
     fileName = "";
+    window.history.pushState(null, "New", "/create");
 }
 
 function saveClick() {
@@ -517,7 +521,7 @@ function saveProgram() {
     if (isNew) {
         openSaveName();
     } else {
-        saveProgramToDB(fileName, true);
+        saveProgramToDB(fileName, true, false);
     }
 }
 
@@ -525,13 +529,14 @@ function saveLibrary() {
     if (isNew) {
         openSaveName();
     } else {
-        saveProgramToDB(fileName, false);
+        saveProgramToDB(fileName, false, false);
     }
 }
 
-function saveProgramToDB(name, isProgram) {
+function saveProgramToDB(name, isProgram, isNew) {
     fileName = name;
     var code = editor.getValue();
+    code = code.replace("\\n", "\\\\n");
     $.ajax({
         data: {
             "user": sessionUser,
@@ -548,7 +553,10 @@ function saveProgramToDB(name, isProgram) {
                 document.getElementById('fileNameCorrection').innerHTML = "Duplicate file name";
                 document.getElementById('fileNameCorrection').style.display = "block";
             } else {
-                isNew = false;
+                if (isNew) {
+                    isNew = false;
+                    window.history.pushState(null, "NewFile", "/create/" + sessionUser + "/" + name);
+                }
                 //openSaveConfirm();
                 document.getElementById("save").src = "/assets/images/saveClicked.png";
                 $('#saveNameModal').css('display', 'none');
@@ -556,6 +564,7 @@ function saveProgramToDB(name, isProgram) {
         }
     });
 }
+
 
 function openSaveName() {
     $('#saveNameModal').css('display', 'block');
@@ -565,7 +574,8 @@ function saveName() {
     var name = $('#fileName').val();
     var code = editor.getValue();
     if (saveNameValidate(name)) {
-        saveProgramToDB(name, isProgram(code));
+        saveProgramToDB(name, isProgram(code), true);
+        isNew = false;
     }
 }
 
@@ -938,7 +948,7 @@ function populateSearchResults(res) {
         var cell3 = row.insertCell(2);
         var cell4 = row.insertCell(3);
         cell1.innerHTML = res[i]['name'];
-        cell2.innerHTML = res[i]['username'];
+        cell2.innerHTML = "<a id='userPageLink' href='/user/" + res[i]['username'] + "'>" + res[i]['username'] + "</a>";
         cell3.innerHTML = "stuff";
         cell4.innerHTML = "<span onclick='viewSearchCode(this)' class='actionButton'>View</span>";
         cell4.innerHTML = cell4.innerHTML + "<span onclick='' class='actionButton'>Run</span>";
@@ -956,11 +966,14 @@ function populateSearchResults(res) {
 function viewSearchCode(cell) {
     var name = cell.parentNode.parentNode.cells[0].innerHTML;
     var user = cell.parentNode.parentNode.cells[1].innerHTML;
+    user = user.substr(user.indexOf(">") + 1);
+    user = user.substr(0, user.indexOf("<"));
     $.ajax({
         async: false,
         data: {
             "user": user,
-            "name": name
+            "name": name,
+            "isProgram": false
         },
         type: "POST",
         url: "/db/getProgramLibrary.php",
@@ -1184,8 +1197,6 @@ function setEditor(e) {
         ev.preventDefault();
     });
 }
-
-
 
 function setPreviewEditor(e) {
     previewEditor = e;

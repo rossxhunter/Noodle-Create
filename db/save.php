@@ -5,7 +5,7 @@
     $code = $_POST['code'];
     $isProgram = $_POST['isProgram'];
     $isNew = $_POST['isNew'];
-    if ($isProgram == true) {
+    if ($isProgram == "true") {
         $data = "SELECT * FROM program WHERE name = '$name' AND username = '$user'";
     }
     else {

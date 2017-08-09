@@ -513,7 +513,7 @@ exports.commands = [{
     exec: function() { saveClick(); }
 }, {
     name: "new",
-    bindKey: bindKey("Ctrl-N", "Command-N"),
+    bindKey: bindKey("Ctrl-Shift-N", "Command-Shift-N"),
     exec: function() { newFileClick(); }
 },{
     name: "copylinesup",

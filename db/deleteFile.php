@@ -9,7 +9,7 @@
         $delete = "DELETE FROM program WHERE username = '$username' AND name = '$name'";
     }
     else {
-        $delete = "DELETE FROM library WHERE username = '$username'";
+        $delete = "DELETE FROM library WHERE username = '$username' AND name = '$name'";
     }
     $q = mysqli_query($con, $delete);
     if (!$q) {
