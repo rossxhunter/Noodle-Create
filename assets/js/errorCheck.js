@@ -19,7 +19,7 @@ var originalLength;
 
 function errorCheck(arrayOfLines, blockStack) {
     uninitialisedVariables.push(new uninitialisedVariable("T", "null", 1, 0, arrayOfLines.length));
-    document.getElementById('noodleOutputBox').value = "";
+    document.getElementById(outputBox).value = "";
     getStructs(arrayOfLines);
     originalLength = arrayOfLines.length;
     var initialCorrect = true;

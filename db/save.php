@@ -2,6 +2,7 @@
     include("connect.php");
     $user = $_POST['user'];
     $name = $_POST['name'];
+    $description = $_POST['description'];
     $code = $_POST['code'];
     $isProgram = $_POST['isProgram'];
     $isNew = $_POST['isNew'];
@@ -19,10 +20,10 @@
         }
         else {
             if ($isProgram == "true") {
-                $update = "UPDATE program SET code = '$code' WHERE name = '$name' AND username = '$user'";
+                $update = "UPDATE program SET code = '$code', date_last_edited = now() WHERE name = '$name' AND username = '$user'";
             }
             else {
-                $update = "UPDATE library SET code = '$code' WHERE name = '$name' AND username = '$user'";
+                $update = "UPDATE library SET code = '$code', date_last_edited = now() WHERE name = '$name' AND username = '$user'";
             }
             $updateQ = mysqli_query($con, $update);
             if ($updateQ) {
@@ -35,10 +36,10 @@
     }
     else {
         if ($isProgram == "true") {
-            $insert = "INSERT INTO program (name, username, code) VALUES ('$name', '$user', '$code')";
+            $insert = "INSERT INTO program (name, username, code, description) VALUES ('$name', '$user', '$code', '$description')";
         }
         else {
-            $insert = "INSERT INTO library (name, username, code) VALUES ('$name', '$user', '$code')";
+            $insert = "INSERT INTO library (name, username, code, description) VALUES ('$name', '$user', '$code', '$description')";
         }
         $insertQ = mysqli_query($con, $insert);
         if (!$insertQ) {

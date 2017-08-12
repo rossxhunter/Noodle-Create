@@ -33,7 +33,7 @@ define(function(require, exports, module) {
                 },
                 {
                     token: "string",
-                    regex: '".*"' //
+                    regex: '"(.*)?"' //
                 },
                 {
                     token: "string",

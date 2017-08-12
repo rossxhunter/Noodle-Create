@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>Noodle Create - Collaborative Coding</title>
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="/assets/js/moment.js"></script>
   <script type="text/javascript" src="/assets/js/script.js"></script>
   <script type="text/javascript" src="/assets/js/loginRegister.js"></script>
   <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
@@ -16,6 +17,8 @@
   <script>
     $(document).ready(function() {
       checkSession();
+      var tab = document.getElementById("accountSettingsTab");
+      tab.focus();
       var user = checkUser();
       if (user != null) {
         setUserDetails(user);
@@ -86,14 +89,17 @@
               Are you sure you want to log out?
             </p>
           </div>
+
           <div id="logoutModalOptionsContainer">
+
             <div class="confirmModalOption" id="logoutCancel" onclick="cancelLogout()">
               <h2>Cancel</h2>
             </div>
             <div class="confirmModalOption" id="logoutLogout" onclick="logoutLogout()">
               <h2>Logout</h2>
             </div>
-          </div>
+        </div>
+
         </div>
       </div>
       <div id="previewModal" class="modal">
@@ -117,11 +123,14 @@
         <div id="editModalContent" class="modal-content">
           <div class="modal-body">
             <p id="editNameText">
-              Edit Name
+              Edit File
             </p>
             <p>
               <input type="text" id="editFileName">
               <span id="editFileNameCorrection" class="form_hint"></span>
+            </p>
+            <p>
+              <textarea id="editDescription" placeholder="Description"></textarea>
             </p>
             <p id="editNameText">
               OR
@@ -150,32 +159,49 @@
           </div>
         </div>
       </div>
+      <div id="deleteAccountConfirmModal" class="modal">
+        <div id="deleteAccountConfirmModalContent" class="modal-content">
+          <div class="modal-body">
+            <p class="confirmText">
+              Are you sure you want to delete your account?
+            </p>
+          </div>
+          <div id="deleteAccountConfirmModalOptionsContainer">
+            <div class="confirmModalOption" id="deleteAccountCancel" onclick="cancelAccountDelete()">
+              <h2>Cancel</h2>
+            </div>
+            <div class="confirmModalOption" id="deleteAccountDelete" onclick="deleteAccountDelete()">
+              <h2>Delete</h2>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="leftSide">
         <div id="optionsBarDiv">
           <div id="optionsBarTable" class="table-div" style="width:100%">
             <div id="accountSettingsTR" class="tr-div optionsBarOption">
-              <div id="accountSettingsTab" onClick="accountSettingsClick()" class="td-div optionTD">
+              <div id="accountSettingsTab" onClick="accountSettingsClick()" class="td-div optionTD" tabindex="-1">
                 <div class="optionsText">
                   Account Settings
                 </div>
               </div>
             </div>
             <div id="editorSettingsTR" class="tr-div optionsBarOption">
-              <div id="editorSettingsTab" onClick="editorSettingsClick()" class="td-div optionTD">
+              <div id="editorSettingsTab" onClick="editorSettingsClick()" class="td-div optionTD" tabindex="-1">
                 <div class="optionsText">
                   Editor Settings
                 </div>
               </div>
             </div>
             <div class="tr-div optionsBarOption">
-              <div id="programsTab" onClick="programsClick()" class="td-div optionTD">
+              <div id="programsTab" onClick="programsClick()" class="td-div optionTD" tabindex="-1">
                 <div class="optionsText">
                   Programs
                 </div>
               </div>
             </div>
             <div class="tr-div optionsBarOption">
-              <div id="librariesTab" onClick="librariesClick()" class="td-div optionTD">
+              <div id="librariesTab" onClick="librariesClick()" class="td-div optionTD"  tabindex="-1">
                 <div class="optionsText">
                   Libraries
                 </div>
@@ -228,6 +254,9 @@
                   <div class="detailsChange">
                     <span onClick="validateChanges()" id="updateDetailsButton">Change</span>
                   </div>
+                  <div class="detailsChange" id="deleteAccountDiv">
+                    <span onClick="deleteAccount()" id="deleteAccountButton">Delete Account</span>
+                  </div>
                 </div>
                 <div id="editorSettings">
                   <div class="changeTitle">
@@ -268,7 +297,8 @@
                     <table id="programListTable">
                       <tr>
                         <th class="nameHeader">Name</th>
-                        <th class="extraHeader">Extra</th>
+                        <th class="createdHeader">Date Created</th>
+                        <th class="editedHeader">Last Edited</th>
                         <th class="actionsHeader">Actions</th>
                       </tr>
                     </table>
@@ -288,7 +318,8 @@
                     <table id="libraryListTable">
                       <tr>
                         <th class="nameHeader">Name</th>
-                        <th class="extraHeader">Extra</th>
+                        <th class="createdHeader">Date Created</th>
+                        <th class="editedHeader">Last Edited</th>
                         <th class="actionsHeader">Actions</th>
                       </tr>
                     </table>

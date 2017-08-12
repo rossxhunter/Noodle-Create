@@ -10,7 +10,26 @@ function setupEditor() {
         var editor = ace.edit("editor");
         setEditor(editor);
         setAce(ace);
-        editor.setTheme("ace/theme/noodle_light");
+        if (sessionUser == null) {
+            editor.setTheme("ace/theme/noodle_light");
+        }
+        else {
+            $.ajax({
+                async: false,
+                data: {
+                    "user": sessionUser
+                },
+                type: "POST",
+                url: "/db/getUserDetails.php",
+                success: function(r) {
+                    var res = JSON.parse(r);
+                    setTheme(res['theme']);
+                    setFontSize(res['font_size']);
+                    editor.renderer.updateFontSize();
+                    setSize0();
+                }
+            });
+        }
         editor.session.setOptions({
             mode: "ace/mode/noodle",
             tabSize: 2,
@@ -20,10 +39,19 @@ function setupEditor() {
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true
         });
-        editor.session.insert({
-            row: 1,
-            column: 0
-        }, "func main()\n  //Code here!\nend")
+        if (window.location.href.match(/.*\/create\/lib/) != null) {
+            window.history.pushState(null, "LibRemove", "/create");
+            editor.session.insert({
+                row: 1,
+                column: 0
+            }, "//Code here!")
+        }
+        else {
+            editor.session.insert({
+                row: 1,
+                column: 0
+            }, "func main()\n  //Code here!\nend")
+        }
         editor.commands.addCommand({
             name: 'new',
             bindKey: {
@@ -35,12 +63,14 @@ function setupEditor() {
             },
             readOnly: true
         });
-        if (isLib) {
-            editor.setValue("//Code here!", 1);
-        }
         editor.setAutoScrollEditorIntoView(true);
         checkProgramLibrary();
         setDimensions();
+        window.onbeforeunload = function(e) {
+            if (unsaved) {
+                return "Unsaved changes";
+            }
+        };
     });
 }
 

@@ -45,12 +45,14 @@ function struct(name, memberTypes, memberNames) {
 //Helper functions
 
 function addRedLine(line) {
-    var Range = ace.require('ace/range').Range;
-    if (currentMarker != null) {
-        editor.session.removeMarker(currentMarker);
+    if (outputBox == "noodleOutputBox") {
+        var Range = ace.require('ace/range').Range;
+        if (currentMarker != null) {
+            editor.session.removeMarker(currentMarker);
+        }
+        currentMarker = editor.session.addMarker(new Range(line - 1, 0, line - 1, 1), "syntaxError", "fullLine");
+        $("#errorIndicator").attr("src", "/assets/images/cross.png");
     }
-    currentMarker = editor.session.addMarker(new Range(line - 1, 0, line - 1, 1), "syntaxError", "fullLine");
-    $("#errorIndicator").attr("src", "/assets/images/cross.png");
 }
 
 function unendedBlockError(blockStack) {
@@ -100,7 +102,7 @@ function unendedBlockError(blockStack) {
 }
 
 function addError(error) {
-    document.getElementById('noodleOutputBox').value += "ERROR: " + error + "\n";
+    document.getElementById(outputBox).value += "ERROR: " + error + "\n";
 }
 
 function findFuncByLine(line) {
@@ -479,9 +481,13 @@ function getTypeOfVarsAndLits(es, fs, lineNumber) {
         if (isOperand(es[i])) {
             if (es[i].match(/^.*(==|!=|<|>|<=|>=).*$/) != null) {
                 evaluatedList.push("pred");
-            } else if (es[i].match(/^\[.*]$/) != null) {
+            } else if (es[i].match(/^\[.*\]$/) != null) {
+                if (es[i] == "[]") {
+                    evaluatedList.push("T[]");
+                }
                 var withoutI = es[i].substr(1, es[i].length - 2);
-                var aType = getArrayElemType(withoutI);
+                var sp = withoutI.split(/,/);
+                var aType = getArrayElemType(sp[0]);
                 var t = aType + "[]";
                 evaluatedList.push(t);
             }

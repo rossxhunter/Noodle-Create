@@ -273,7 +273,7 @@ function decodePrint(line, lineNumber) {
     }
     output = output.toString();
     output = output.replace(/\\\\/g, '\\');
-    document.getElementById('noodleOutputBox').value += output;
+    document.getElementById(outputBox).value += output;
 }
 
 function decodeVarDec(line, lineNumber) {
@@ -317,8 +317,8 @@ function decodeVarDec(line, lineNumber) {
     var newVar = new variable(varType, varName, varValue);
     removeOldVar(varName);
     variables.push(newVar);
-    document.getElementById('noodleOutputBox').value += newVar.name;
-    document.getElementById('noodleOutputBox').value += newVar.value;
+    document.getElementById(outputBox).value += newVar.name;
+    document.getElementById(outputBox).value += newVar.value;
 }
 
 function decodeStruct(varType, varName, varValue, lineNumber) {
@@ -388,8 +388,8 @@ function decodeVarAss(line, lineNumber) {
             }
             updateStructMem(varWithoutIndex, m, oldVarValue);
             var newVar = getMemberVal(findVar(varWithoutIndex).value, str, m);
-            //document.getElementById('noodleOutputBox').value += newVar.name + index;
-            document.getElementById('noodleOutputBox').value += newVar[index];
+            //document.getElementById(outputBox).value += newVar.name + index;
+            document.getElementById(outputBox).value += newVar[index];
         } else {
             var oldVar = findVar(varWithoutIndex);
             if (oldVar.type.match(/.*\[\]/) == null && index >= oldVar.value.length) {
@@ -413,8 +413,8 @@ function decodeVarAss(line, lineNumber) {
             }
             updateVarVal(varWithoutIndex, oldVarValue);
             var newVar = findVar(varWithoutIndex);
-            document.getElementById('noodleOutputBox').value += newVar.name + index;
-            document.getElementById('noodleOutputBox').value += newVar.value[index];
+            document.getElementById(outputBox).value += newVar.name + index;
+            document.getElementById(outputBox).value += newVar.value[index];
         }
     } else {
         if (varName.match(/.*\..*/) != null) {
@@ -454,8 +454,8 @@ function decodeVarAss(line, lineNumber) {
             updateVarVal(varName, varValue);
         }
         var newVar = findVar(varName);
-        document.getElementById('noodleOutputBox').value += newVar.name;
-        document.getElementById('noodleOutputBox').value += newVar.value;
+        document.getElementById(outputBox).value += newVar.name;
+        document.getElementById(outputBox).value += newVar.value;
     }
 
 
@@ -465,7 +465,7 @@ function decodeIf(line, lineNumber) {
     var pred = line.substr(line.indexOf("("));
     var evaluatedPred = evaluateExpression(pred, "bool", lineNumber);
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
-    document.getElementById('noodleOutputBox').value += evaluatedPred;
+    document.getElementById(outputBox).value += evaluatedPred;
     return evaluatedPred;
 }
 
@@ -519,7 +519,7 @@ function decodeWhile(line, lineNumber) {
     var pred = line.substr(line.indexOf("("));
     var evaluatedPred = evaluateExpression(pred, "bool", lineNumber);
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
-    document.getElementById('noodleOutputBox').value += evaluatedPred;
+    document.getElementById(outputBox).value += evaluatedPred;
     return evaluatedPred;
 }
 

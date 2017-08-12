@@ -405,7 +405,7 @@ function getVarsFromExp(expList) {
 }
 
 function addRuntimeError(error) {
-    document.getElementById('noodleOutputBox').value += "\nRUNTIME ERROR: " + error;
+    document.getElementById(outputBox).value += "\nRUNTIME ERROR: " + error;
 }
 
 function checkArrayLength(len, line) {

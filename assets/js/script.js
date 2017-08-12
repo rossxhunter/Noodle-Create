@@ -8,6 +8,9 @@ var isNew;
 var fileName;
 var fileNameCurrentlyEditing;
 var isLib = false;
+var outputBox = "";
+var unsaved;
+var loaded = false;
 
 function setDimensions() {
     setSize0();
@@ -16,8 +19,7 @@ function setDimensions() {
 function setSize0() {
     var body = document.body,
         html = document.documentElement;
-    var height = Math.max(body.scrollHeight, body.offsetHeight,
-        html.clientHeight, html.scrollHeight, html.offsetHeight);
+    var height = body.clientHeight;
     var editorContainer = document.getElementById("editorContainer").style.height;
 
     document.getElementById("editorBorderDiv").style.height = (height - 102) + 'px';
@@ -36,21 +38,19 @@ function setSize0() {
 
     var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
     document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+    document.getElementById("browseOutputBorderDiv").style.height = editorHeight + 'px';
     document.getElementById("browseSelectBorderDiv").style.height = editorHeight + 'px';
 }
 
-/*
+
 window.addEventListener('resize', function(event) {
     switch (sizeMode) {
-        case 0:
-            setSize1();
-        case 1:
-            setSize2();
-        case 2:
-            setSize1();
+        case 0 : setSize0(); break;
+        case 1 : setSize1(); break;
+        case 2 : setSize2(); break;
     }
 });
-*/
+
 function checkSession() {
     $.ajax({
         async: false,
@@ -140,6 +140,7 @@ function checkProgramLibrary() {
                     code = res['code'];
                     isNew = false;
                     fileName = name;
+                    document.title = name;
                 }
             }
         });
@@ -148,11 +149,12 @@ function checkProgramLibrary() {
         window.open("/notfound", '_self', "NotFound");
     } else {
         loadProgramLibrary(code);
+        //unsaved = false;
     }
 }
 
 function loadProgramLibrary(code) {
-    editor.setValue(code, 1);
+    editor.setValue(code, -1);
 }
 
 function GetCreateURLParameter(param) {
@@ -171,10 +173,8 @@ function accountSettingsClick() {
     $('#editorSettings').css('display', 'none');
     $('#programs').css('display', 'none');
     $('#libraries').css('display', 'none');
-    $('#accountSettingsTab').css('background-color', '#eeeeee');
-    $('#editorSettingsTab').css('background-color', '#fbfbfb');
-    $('#programsTab').css('background-color', '#fbfbfb');
-    $('#librariesTab').css('background-color', '#fbfbfb');
+    var tab = document.getElementById("accountSettingsTab");
+    tab.focus();
 }
 
 function editorSettingsClick() {
@@ -182,10 +182,8 @@ function editorSettingsClick() {
     $('#accountSettings').css('display', 'none');
     $('#programs').css('display', 'none');
     $('#libraries').css('display', 'none');
-    $('#editorSettingsTab').css('background-color', '#eeeeee');
-    $('#accountSettingsTab').css('background-color', '#fbfbfb');
-    $('#programsTab').css('background-color', '#fbfbfb');
-    $('#librariesTab').css('background-color', '#fbfbfb');
+    var tab = document.getElementById("editorSettingsTab");
+    tab.focus();
 }
 
 function programsClick() {
@@ -193,10 +191,7 @@ function programsClick() {
     $('#accountSettings').css('display', 'none');
     $('#editorSettings').css('display', 'none');
     $('#libraries').css('display', 'none');
-    $('#programsTab').css('background-color', '#eeeeee');
-    $('#accountSettingsTab').css('background-color', '#fbfbfb');
-    $('#editorSettingsTab').css('background-color', '#fbfbfb');
-    $('#librariesTab').css('background-color', '#fbfbfb');
+    $('#programsTab').focus();
 }
 
 function librariesClick() {
@@ -204,10 +199,7 @@ function librariesClick() {
     $('#accountSettings').css('display', 'none');
     $('#programs').css('display', 'none');
     $('#editorSettings').css('display', 'none');
-    $('#librariesTab').css('background-color', '#eeeeee');
-    $('#accountSettingsTab').css('background-color', '#fbfbfb');
-    $('#programsTab').css('background-color', '#fbfbfb');
-    $('#editorSettingsTab').css('background-color', '#fbfbfb');
+    $('#librariesTab').focus();
 }
 
 function setUserDetails(user) {
@@ -224,7 +216,7 @@ function setUserDetails(user) {
             var res = JSON.parse(r);
             document.getElementById('emailChangeField').value = res['email'];
             document.getElementById('passwordChangeField').value = res['password'];
-            document.getElementById('changeTheme').value = res['password'];
+            document.getElementById('changeTheme').value = res['theme'];
             document.getElementById('fontSizeChange').value = res['font_size'];
         }
     });
@@ -265,30 +257,89 @@ function populateProgramTable(progs) {
         var cell1 = row.insertCell(0);
         var cell2 = row.insertCell(1);
         var cell3 = row.insertCell(2);
+        var cell4 = row.insertCell(3);
         cell1.innerHTML = progs[i]['name'];
-        cell2.innerHTML = "stuff";
-        cell3.innerHTML = "<span onclick='openPreview(this)' class='actionButton'>Preview</span>";
-        cell3.innerHTML = cell3.innerHTML + "<span onclick='openProgram(this)' class='actionButton'>Open</span>";
-        cell3.innerHTML = cell3.innerHTML + "<span onclick='openEdit(this)' class='actionButton'>Edit</span>";
+        cell2.innerHTML = moment(progs[i]['date_created']).format('MMMM Do YYYY');
+        cell3.innerHTML = moment(progs[i]['date_last_edited']).fromNow();
+        cell4.innerHTML = "<span onclick='openPreview(this)' class='actionButton'>Preview</span>";
+        cell4.innerHTML = cell4.innerHTML + "<span onclick='openProgram(this)' class='actionButton'>Open</span>";
+        if (progs[i]['username'] == sessionUser) {
+            cell4.innerHTML = cell4.innerHTML + "<span onclick='openEdit(this)' class='actionButton'>Edit</span>";
+        }
     }
+}
+
+function timeSince(date) {
+
+    var seconds = Math.floor((new Date() - date) / 1000);
+
+    var interval = Math.floor(seconds / 31536000);
+
+    if (interval > 1) {
+        return interval + " years";
+    }
+    interval = Math.floor(seconds / 2592000);
+    if (interval > 1) {
+        return interval + " months";
+    }
+    interval = Math.floor(seconds / 86400);
+    if (interval > 1) {
+        return interval + " days";
+    }
+    interval = Math.floor(seconds / 3600);
+    if (interval > 1) {
+        return interval + " hours";
+    }
+    interval = Math.floor(seconds / 60);
+    if (interval > 1) {
+        return interval + " minutes";
+    }
+    return Math.floor(seconds) + " seconds";
 }
 
 function openEdit(cell) {
     var name = cell.parentNode.parentNode.cells[0].innerHTML;
+    var description = getDescription(name, sessionUser);
     fileNameCurrentlyEditing = name;
     document.getElementById('editFileName').value = name;
+    document.getElementById('editDescription').value = description;
     $('#editModal').css('display', 'block');
+    $('#editFileName').keypress(function(e) {
+        if (e.keyCode == 13)
+            editSave();
+    });
+}
+
+function getDescription(name, user) {
+    var d;
+    $.ajax({
+        async: false,
+        data: {
+            "user": user,
+            "name": name,
+            "isProgram": "both"
+        },
+        type: "POST",
+        url: "/db/getProgramLibrary.php",
+        success: function(r) {
+            var res = JSON.parse(r);
+            d = res['description'];
+        }
+    });
+    return d;
 }
 
 function editSave() {
     var name = $('#editFileName').val();
+    var description = $('#editDescription').val();
     if (editFileNameValidate(name)) {
         $.ajax({
             async: false,
             data: {
                 "user": sessionUser,
                 "name": fileNameCurrentlyEditing,
-                "newName": name
+                "newName": name,
+                "description": description
             },
             type: "POST",
             url: "/db/editFileName.php",
@@ -366,8 +417,7 @@ function openPreview(cell) {
 
 function openPreviewModal(code) {
     $('#previewModal').css('display', 'block');
-    //document.getElementById("previewCode").innerHTML = code;
-    previewEditor.setValue(code, 1);
+    previewEditor.setValue(code, -1);
 }
 
 function previewClose() {
@@ -415,11 +465,15 @@ function populateLibraryTable(libs) {
         var cell1 = row.insertCell(0);
         var cell2 = row.insertCell(1);
         var cell3 = row.insertCell(2);
+        var cell4 = row.insertCell(3);
         cell1.innerHTML = libs[i]['name'];
-        cell2.innerHTML = "stuff";
-        cell3.innerHTML = "<span onclick='openPreview(this)' class='actionButton'>Preview</span>";
-        cell3.innerHTML = cell3.innerHTML + "<span onclick='openProgram(this)' class='actionButton'>Open</span>";
-        cell3.innerHTML = cell3.innerHTML + "<span onclick='openEdit(this)' class='actionButton'>Edit</span>";
+        cell2.innerHTML = moment(libs[i]['date_created']).format('MMMM Do YYYY');
+        cell3.innerHTML = moment(libs[i]['date_last_edited']).fromNow();
+        cell4.innerHTML = "<span onclick='openPreview(this)' class='actionButton'>Preview</span>";
+        cell4.innerHTML = cell4.innerHTML + "<span onclick='openProgram(this)' class='actionButton'>Open</span>";
+        if (libs[i]['username'] == sessionUser) {
+            cell4.innerHTML = cell4.innerHTML + "<span onclick='openEdit(this)' class='actionButton'>Edit</span>";
+        }
     }
 }
 
@@ -469,6 +523,7 @@ function logoutLogout() {
         url: "/db/logout.php",
         success: function() {
             window.open("/index", '_self', "IndexPage");
+            sessionUser = null;
         }
     });
 }
@@ -479,7 +534,7 @@ function newProgramClick() {
 
 function newLibraryClick() {
     isLib = true;
-    window.open("/create", '_self', "CreatePage");
+    window.open("/create/lib", '_self', "CreatePage");
 }
 
 function newFileClick() {
@@ -487,6 +542,8 @@ function newFileClick() {
     isNew = true;
     fileName = "";
     window.history.pushState(null, "New", "/create");
+    document.getElementById("noodleOutputBox").value = "";
+    document.title = "New File";
 }
 
 function saveClick() {
@@ -497,7 +554,7 @@ function saveClick() {
             if (status == "Login/Register") {
                 openLoginRegister();
             } else {
-                if (isProgram(editor.getValue())) {
+                if (isCodeProgram(editor.getValue())) {
                     saveProgram();
                 } else {
                     saveLibrary();
@@ -507,7 +564,7 @@ function saveClick() {
     });
 }
 
-function isProgram(code) {
+function isCodeProgram(code) {
     var lines = code.split(/\r?\n/);
     for (var i = 0; i < lines.length; i++) {
         if (lines[i].trim().match(/func\s+main\(\)/) != null) {
@@ -517,11 +574,15 @@ function isProgram(code) {
     return false;
 }
 
+function cancelSave() {
+    $('#saveNameModal').css('display', 'none');
+}
+
 function saveProgram() {
     if (isNew) {
         openSaveName();
     } else {
-        saveProgramToDB(fileName, true, false);
+        saveProgramToDB(fileName, null, true, false);
     }
 }
 
@@ -529,11 +590,11 @@ function saveLibrary() {
     if (isNew) {
         openSaveName();
     } else {
-        saveProgramToDB(fileName, false, false);
+        saveProgramToDB(fileName, null, false, false);
     }
 }
 
-function saveProgramToDB(name, isProgram, isNew) {
+function saveProgramToDB(name, description, isProgram, isNew) {
     fileName = name;
     var code = editor.getValue();
     code = code.replace("\\n", "\\\\n");
@@ -541,6 +602,7 @@ function saveProgramToDB(name, isProgram, isNew) {
         data: {
             "user": sessionUser,
             "name": name,
+            "description": description,
             "code": code,
             "isProgram": isProgram,
             "isNew": isNew
@@ -559,7 +621,9 @@ function saveProgramToDB(name, isProgram, isNew) {
                 }
                 //openSaveConfirm();
                 document.getElementById("save").src = "/assets/images/saveClicked.png";
+                unsaved = false;
                 $('#saveNameModal').css('display', 'none');
+                document.title = name;
             }
         }
     });
@@ -572,9 +636,10 @@ function openSaveName() {
 
 function saveName() {
     var name = $('#fileName').val();
+    var description = $('#description').val();
     var code = editor.getValue();
     if (saveNameValidate(name)) {
-        saveProgramToDB(name, isProgram(code), true);
+        saveProgramToDB(name, description, isCodeProgram(code), true);
         isNew = false;
     }
 }
@@ -614,6 +679,10 @@ function openUserPage(user) {
 }
 
 function openLoginRegister() {
+    $('#passwordField').keypress(function(e) {
+        if (e.keyCode == 13)
+            loginRegisterDone();
+    });
     document.getElementById('emailCorrection').style.display = "none";
     document.getElementById('usernameCorrection').style.display = "none";
     document.getElementById('passwordCorrection').style.display = "none";
@@ -644,6 +713,19 @@ function showRegister() {
 }
 
 function settingsClick() {
+    $.ajax({
+        async: false,
+        data: {
+            "user": sessionUser
+        },
+        type: "POST",
+        url: "/db/getUserDetails.php",
+        success: function(r) {
+            var res = JSON.parse(r);
+            $('#themeSelect').val(res['theme']);
+            $('#fontSizeSelect').val(res['font_size']);
+        }
+    });
     document.getElementById('settingsModal').style.display = "block";
 }
 
@@ -708,6 +790,7 @@ function validateChanges() {
                         success: function(s) {}
                     });
                     window.open("/user/" + username, '_self', "UserPage");
+                    sessionUser = null;
                 }
             }
         });
@@ -785,11 +868,80 @@ function settingsDone() {
     var fontSize = document.getElementById('fontSizeSelect').value;
     if (fontSize >= 8 && fontSize <= 20) {
         document.getElementById('settingsModal').style.display = "none";
-        var theme = document.getElementById('themeSelect').value;
-        var fontSize = document.getElementById('fontSizeSelect').value;
         setTheme(theme);
         setFontSize(fontSize);
+        editor.renderer.updateFontSize();
+        setSize0();
+        $.ajax({
+            async: false,
+            type: "POST",
+            data: {
+                "user": sessionUser,
+                "theme": theme,
+                "fontSize": fontSize
+            },
+            url: "/db/updatePreferences.php",
+            success: function(status) {}
+        });
     }
+}
+
+function cleanClick(code) {
+    var lines = code.split(/\r?\n/);
+    var numBlocks = 0;
+    for (var i = 0; i < lines.length; i++) {
+        lines[i] = lines[i].trim();
+        var reqTabs = getTabs(numBlocks);
+        if (isBlock(lines[i].trim())) {
+            numBlocks += 1;
+        } else if (lines[i].trim().match(/^end$/) != null) {
+            numBlocks -= 1;
+            reqTabs = getTabs(numBlocks);
+        }
+        lines[i] = reqTabs + lines[i];
+    }
+    lines = concatLines(lines);
+    editor.setValue(lines, 1);
+}
+
+function isBlock(line) {
+    var firstWord = line.match(/([^\s]+)/);
+    if (firstWord != null) {
+        firstWord = firstWord[0];
+    }
+    if (isBlockWord(firstWord)) {
+        return true;
+    }
+    return false;
+}
+
+function isBlockWord(word) {
+    var blockWords = ["func", "import", "if", "else", "struct", "for", "while", "do", "define"];
+    for (var i = 0; i < blockWords.length; i++) {
+        if (word == blockWords[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getTabs(numBlocks) {
+    var result = "";
+    for (var i = 0; i < numBlocks; i++) {
+        result = result + "  ";
+    }
+    return result;
+}
+
+function concatLines(lines) {
+    var result = "";
+    for (var i = 0; i < lines.length; i++) {
+        result += lines[i];
+        if (i < lines.length - 1) {
+            result += '\n';
+        }
+    }
+    return result;
 }
 
 function setTheme(theme) {
@@ -826,7 +978,7 @@ function setFontSize(fontSize) {
 
 var findShowing = false;
 
-function find() {
+function findClick() {
     if (findShowing) {
         editor.searchBox.hide();
         findShowing = false;
@@ -839,8 +991,7 @@ function find() {
 function setSize1() {
     var body = document.body,
         html = document.documentElement;
-    var height = Math.max(body.scrollHeight, body.offsetHeight,
-        html.clientHeight, html.scrollHeight, html.offsetHeight);
+    var height = body.clientHeight;
     $('#navbar').fadeOut('slow', function() {
         $("#fullScreen").attr("src", "/assets/images/smallScreen.png");
         $("#mainBody").css("padding-top", "0px");
@@ -861,6 +1012,7 @@ function setSize1() {
         searchEditor.setOption("minLines", numberOfLines);
         var editorHeight = parseInt(document.getElementById("editorContainer").style.height);
         document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+        document.getElementById("browseOutputBorderDiv").style.height = editorHeight + 'px';
         document.getElementById("browseSelectBorderDiv").style.height = editorHeight + 'px';
         document.getElementById("toolbarDiv").style.height = height * 0.96 + 'px';
         document.getElementById("browseToolbarDiv").style.height = height * 0.96 + 'px';
@@ -870,8 +1022,7 @@ function setSize1() {
 function setSize2() {
     var body = document.body,
         html = document.documentElement;
-    var height = Math.max(body.scrollHeight, body.offsetHeight,
-        html.clientHeight, html.scrollHeight, html.offsetHeight);
+    var height = body.clientHeight;
     $("#mainBody").css("padding-top", "32px");
     $("#fullScreen").attr("src", "/assets/images/fullScreen.png");
     $('#navbar').fadeIn('slow', function() {
@@ -891,13 +1042,14 @@ function setSize2() {
         searchEditor.setOption("minLines", numberOfLines);
         var editorHeight = parseInt(document.getElementById("editorBorderDiv").style.height);
         document.getElementById("outputBorderDiv").style.height = editorHeight + 'px';
+        document.getElementById("browseOutputBorderDiv").style.height = editorHeight + 'px';
         document.getElementById("browseSelectBorderDiv").style.height = editorHeight + 'px';
         document.getElementById("toolbarDiv").style.height = (height - 102) * 0.96 + 'px';
         document.getElementById("browseToolbarDiv").style.height = (height - 102) * 0.96 + 'px';
     });
 }
 
-function fullScreen() {
+function fullScreenClick() {
     if (document.getElementById("mainBody").style.paddingTop != '0px') {
         sizeMode = 1;
         setSize1();
@@ -907,11 +1059,43 @@ function fullScreen() {
     }
 }
 
+function deleteAccount() {
+    $('#deleteAccountConfirmModal').css('display', 'block');
+}
+
+function cancelAccountDelete() {
+    $('#deleteAccountConfirmModal').css('display', 'none');
+}
+
+function deleteAccountDelete() {
+    $('#deleteAccountConfirmModal').css('display', 'none');
+    $.ajax({
+        async: false,
+        url: "/db/logout.php",
+        success: function(status) {}
+    });
+    $.ajax({
+        async: false,
+        url: "/db/deleteAccount.php",
+        data: {
+            "user": sessionUser
+        },
+        type: "POST",
+        success: function(status) {
+            window.open("/create", '_self', "Home");
+        }
+    });
+}
+
 function libraryClick() {
     $('#mainTableDiv').css('display', 'none');
     $('#browseDiv').css('display', 'block');
     var searchBar = document.getElementById("searchBar");
     searchBar.addEventListener("input", searchResultsUpdate);
+}
+
+function descriptionClose() {
+    $('#descriptionModal').css('display', 'none');
 }
 
 function searchResultsUpdate() {
@@ -947,12 +1131,22 @@ function populateSearchResults(res) {
         var cell2 = row.insertCell(1);
         var cell3 = row.insertCell(2);
         var cell4 = row.insertCell(3);
+        var isProgram = getIsProgram(res[i]['name'], res[i]['username']);
         cell1.innerHTML = res[i]['name'];
         cell2.innerHTML = "<a id='userPageLink' href='/user/" + res[i]['username'] + "'>" + res[i]['username'] + "</a>";
-        cell3.innerHTML = "stuff";
-        cell4.innerHTML = "<span onclick='viewSearchCode(this)' class='actionButton'>View</span>";
-        cell4.innerHTML = cell4.innerHTML + "<span onclick='' class='actionButton'>Run</span>";
-        cell4.innerHTML = cell4.innerHTML + "<span onclick='' class='actionButton'>Import</span>";
+        if (isProgram) {
+            var imgSrc = "/assets/images/progCircle.png";
+        } else {
+            var imgSrc = "/assets/images/libCircle.png";
+        }
+        cell3.innerHTML = "<img id='libProgCircle' src='" + imgSrc + "' />";
+        cell4.innerHTML = "<span onclick='viewSearchCode(this)' class='actionButton'>Code</span>";
+        cell4.innerHTML = cell4.innerHTML + "<span onclick='openDescription(this)' class='actionButton'>Description</span>";
+        if (isProgram) {
+            cell4.innerHTML = cell4.innerHTML + "<span onclick='runSearchProgram(this)' class='actionButton'>Run</span>";
+        } else {
+            cell4.innerHTML = cell4.innerHTML + "<span onclick='importSearchLib(this)' class='actionButton'>Import</span>";
+        }
     }
     if (res.length == 0) {
         $("#searchResultsDiv").css('display', 'none');
@@ -963,7 +1157,7 @@ function populateSearchResults(res) {
     }
 }
 
-function viewSearchCode(cell) {
+function openDescription(cell) {
     var name = cell.parentNode.parentNode.cells[0].innerHTML;
     var user = cell.parentNode.parentNode.cells[1].innerHTML;
     user = user.substr(user.indexOf(">") + 1);
@@ -973,7 +1167,142 @@ function viewSearchCode(cell) {
         data: {
             "user": user,
             "name": name,
-            "isProgram": false
+            "isProgram": true
+        },
+        type: "POST",
+        url: "/db/getProgramLibrary.php",
+        success: function(status) {
+            var desc;
+            if (status == "Not Found") {
+                desc = "";
+            } else {
+                var res = JSON.parse(status);
+                desc = res['description'];
+            }
+            document.getElementById("descriptionModalText").innerHTML = desc;
+        }
+    });
+    $('#descriptionModal').css('display', 'block');
+}
+
+function runSearchProgram(cell) {
+    var name = cell.parentNode.parentNode.cells[0].innerHTML;
+    var user = cell.parentNode.parentNode.cells[1].innerHTML;
+    user = user.substr(user.indexOf(">") + 1);
+    user = user.substr(0, user.indexOf("<"));
+    $.ajax({
+        async: false,
+        data: {
+            "user": user,
+            "name": name,
+            "isProgram": true
+        },
+        type: "POST",
+        url: "/db/getProgramLibrary.php",
+        success: function(status) {
+            var res = JSON.parse(status);
+            outputBox = "browseOutputBox";
+            noodle(res['code'], false);
+        }
+    });
+    $("#browseOutputBoxContainer").css("display", "block");
+    $("#browseSelectBoxContainer").css("display", "none");
+}
+
+function importSearchLib(cell) {
+    var name = cell.parentNode.parentNode.cells[0].innerHTML;
+    var user = cell.parentNode.parentNode.cells[1].innerHTML;
+    user = user.substr(user.indexOf(">") + 1);
+    user = user.substr(0, user.indexOf("<"));
+    var code = editor.getValue();
+    var lines = code.split(/\r?\n/);
+    if (importExists(lines)) {
+        addNewImport(lines, name, user);
+    } else {
+        createImport(lines, name, user);
+    }
+}
+
+function importExists(lines) {
+    importFound = false;
+    for (var i = 0; i < lines.length; i++) {
+        if (importFound) {
+            if (lines[i].trim().match(/^end$/) != null) {
+                return true;
+            }
+        }
+        if (lines[i].trim().match(/^import$/) != null) {
+            importFound = true;
+        }
+    }
+    return false;
+}
+
+function addNewImport(lines, name, user) {
+    var importFound = false;
+    var finished = false;
+    var i = 0;
+    var importLine = "  " + user + "/" + name;
+    while (i < lines.length && !finished) {
+        if (lines[i].trim() == importLine.trim()) {
+            finished = true;
+        }
+        if (importFound) {
+            if (lines[i].trim().match(/^end$/) != null) {
+                lines.splice(i, 0, importLine);
+                finished = true;
+            }
+        }
+        if (lines[i].trim().match(/^import$/) != null) {
+            importFound = true;
+        }
+        i += 1;
+    }
+
+    var code = concatLines(lines);
+    editor.setValue(code, -1);
+}
+
+function createImport(lines, name, user) {
+    lines.splice(0, 0, "import");
+    var importLine = "  " + user + "/" + name;
+    lines.splice(1, 0, importLine);
+    lines.splice(2, 0, "end");
+    var code = concatLines(lines);
+    editor.setValue(code, -1);
+}
+
+function getIsProgram(name, user) {
+    var isProgram = true;
+    $.ajax({
+        async: false,
+        data: {
+            "user": user,
+            "name": name
+        },
+        type: "POST",
+        url: "/db/findLib.php",
+        success: function(status) {
+            if (status != "Not found") {
+                isProgram = false;
+            }
+        }
+    });
+    return isProgram;
+}
+
+function viewSearchCode(cell) {
+    var name = cell.parentNode.parentNode.cells[0].innerHTML;
+    var user = cell.parentNode.parentNode.cells[1].innerHTML;
+    user = user.substr(user.indexOf(">") + 1);
+    user = user.substr(0, user.indexOf("<"));
+    var isProgram = getIsProgram(name, user);
+    $.ajax({
+        async: false,
+        data: {
+            "user": user,
+            "name": name,
+            "isProgram": isProgram
         },
         type: "POST",
         url: "/db/getProgramLibrary.php",
@@ -982,21 +1311,27 @@ function viewSearchCode(cell) {
             displaySearchCode(res['code']);
         }
     });
+    $("#browseOutputBoxContainer").css("display", "none");
+    $("#browseSelectBoxContainer").css("display", "block");
 }
 
 function displaySearchCode(code) {
-    searchEditor.setValue(code, 1);
+    searchEditor.setValue(code, -1);
     $("#searchEditorDiv").css('display', 'block');
 }
 
 function pencilClick() {
     $('#browseDiv').css('display', 'none');
     $('#mainTableDiv').css('display', 'block');
+    editor.setValue(editor.getValue(), -1);
 }
 
 var currentMarker;
 
-function noodle(code) {
+function noodle(code, isMain) {
+    if (isMain) {
+        outputBox = "noodleOutputBox";
+    }
     variables = [];
     uninitialisedVariables = [];
     structs = [];
@@ -1009,11 +1344,16 @@ function noodle(code) {
     currentLevel = 0;
     hasMain = false;
     funcList = [];
+    if (outputBox == "") {
+        outputBox = "noodleOutputBox";
+    }
     var isCorrect = errorCheck(arrayOfLines, blockStack);
     if (isCorrect) {
-        document.getElementById('noodleOutputBox').value = "";
+        document.getElementById(outputBox).value = "";
         var Range = ace.require('ace/range').Range;
-        $("#errorIndicator").attr("src", "/assets/images/tick.png");
+        if (outputBox == "noodleOutputBox") {
+            $("#errorIndicator").attr("src", "/assets/images/tick.png");
+        }
         shouldSkip = false;
         satisfied = false;
         codeBlockStack = [];
@@ -1032,7 +1372,9 @@ function noodle(code) {
         }
         execute(linesArray, mainFunction.start - 1, mainFunction.end - 1);
     } else {
-        $("#errorIndicator").attr("src", "/assets/images/cross.png");
+        if (outputBox == "noodleOutputBox") {
+            $("#errorIndicator").attr("src", "/assets/images/cross.png");
+        }
     }
 }
 
@@ -1207,8 +1549,13 @@ function setSearchEditor(e) {
 }
 
 function editorEdited() {
+    if (loaded) {
 
-    document.getElementById("save").src = "/assets/images/save.png";
+        unsaved = true;
+        document.getElementById("save").src = "/assets/images/save.png";
+    } else {
+        loaded = true;
+    }
 }
 
 var ace;

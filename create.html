@@ -125,15 +125,32 @@
               <input type="text" id="fileName" placeholder="File Name">
               <span id="fileNameCorrection" class="form_hint"></span>
             </p>
+            <p>
+              <textarea id="description" placeholder="Description"></textarea>
+            </p>
           </div>
-          <div onclick="saveName()" class="modal-footer">
-            <h3>Save</h3>
+          <div id="saveModalOptionsContainer">
+            <div class="confirmModalOption saveOption" id="saveCancel" onclick="cancelSave()">
+              <h2>Cancel</h2>
+            </div>
+            <div class="confirmModalOption saveOption" id="saveSave" onclick="saveName()">
+              <h2>Save</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="descriptionModal" class="modal">
+        <div id="descriptionModalContent" class="modal-content">
+          <div class="modal-body">
+              <p id="descriptionModalText">
+              </p>
+          </div>
+          <div onclick="descriptionClose()" class="modal-footer">
+            <h3 id="descriptionModalCloseText">Close</h3>
           </div>
         </div>
       </div>
       <div id="flippers">
-
-
         <div class="flipDiv" id="mainTableDiv">
           <div class="table-div" style="width:100%">
             <div class="tr-div">
@@ -152,7 +169,7 @@
               </div>
               <div id="toolbarDiv" class="td-div">
                 <div class="tooltip">
-                  <img onclick="noodle(editor.getValue())" id="run" src="/assets/images/run.png" />
+                  <img onclick="noodle(editor.getValue(), true)" id="run" src="/assets/images/run.png" />
                   <span class="tooltiptext">Run</span>
                 </div>
                 <div class="tooltip">
@@ -168,15 +185,15 @@
                   <span class="tooltiptext">Browse</span>
                 </div>
                 <div class="tooltip">
-                  <img onclick="fullScreen()" id="fullScreen" src="/assets/images/fullScreen.png" />
+                  <img onclick="fullScreenClick()" id="fullScreen" src="/assets/images/fullScreen.png" />
                   <span class="tooltiptext">Expand</span>
                 </div>
                 <div class="tooltip">
-                  <img onclick="find()" id="find" src="/assets/images/find.png" />
+                  <img onclick="findClick()" id="find" src="/assets/images/find.png" />
                   <span class="tooltiptext">Find</span>
                 </div>
                 <div class="tooltip">
-                  <img id="clean" src="/assets/images/clean.png" />
+                  <img onclick="cleanClick(editor.getValue())" id="clean" src="/assets/images/clean.png" />
                   <span class="tooltiptext">Clean</span>
                 </div>
                 <div class="tooltip">
@@ -214,8 +231,8 @@
                       <tr>
                         <th class="searchResultsHeader" id="searchNameHeader">Name</th>
                         <th class="searchResultsHeader" id="searchUserHeader">User</th>
-                        <th class="searchResultsHeader" id="searchExtraHeader">Extra</th>
-                        <th class="searchResultsHeader" id="searchActionsHeader">Actions</th>
+                        <th class="searchResultsHeader" id="searchTypeHeader">Type</th>
+                        <th class="searchResultsHeader" id="searchActionsHeader">Options</th>
                       </tr>
                     </table>
                   </div>
@@ -235,6 +252,14 @@
                     <script src="/ace/demo/kitchen-sink/require.js"></script>
                     <script src="/assets/js/setupEditor.js"></script>
                   </div>
+                </div>
+              </div>
+              <div class="td-div" id="browseOutputBoxContainer">
+                <div id="browseOutputBorderDiv">
+                  <div id="outputText">
+                    OUTPUT
+                  </div>
+                  <textarea id="browseOutputBox" readonly>hbjk</textarea>
                 </div>
               </div>
             </div>
