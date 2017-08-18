@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--Created by Ross Hunter Copyright (c) 2017 -->
 <html lang="en">
 
 <head>
@@ -150,7 +151,7 @@
           </div>
         </div>
       </div>
-      <div id="flippers">
+      <div class="mainBody" id="flippers">
         <div class="flipDiv" id="mainTableDiv">
           <div class="table-div" style="width:100%">
             <div class="tr-div">
@@ -221,7 +222,7 @@
                 </div>
                 <div id="browsePaneDiv">
                   <div id="searchBarDiv">
-                    <input id="searchBar" type="text" placeholder="Search for Libraries">
+                    <input id="searchBar" type="text" placeholder="Search for Libraries" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                   </div>
                   <div id="searchNothingHere">
                     <img id="emptyBowlImg" src="/assets/images/nothingHere.png" />
@@ -259,13 +260,18 @@
                   <div id="outputText">
                     OUTPUT
                   </div>
-                  <textarea id="browseOutputBox" readonly>hbjk</textarea>
+                  <textarea id="browseOutputBox" readonly></textarea>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <div class="footer">
+            <span class="footerLink" id="legalLink">Legal</span>
+            <span class="footerLink" id="aboutLink">About</span>
+        </div>
       </div>
+
     </div>
   </div>
 </body>

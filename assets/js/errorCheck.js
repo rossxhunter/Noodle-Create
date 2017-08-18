@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 //Global Variables
 
 var currentLevel = 0;
@@ -6,7 +8,7 @@ var funcList = [];
 var uninitialisedVariables = [];
 var structs = [];
 var mainFunction;
-var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do", "null", "T", "struct", "define", "import"];
+var keywordList = ["true", "false", "int", "float", "string", "char", "bool", "func", "end", "if", "else", "for", "while", "do", "null", "T", "struct", "define", "import", "print", "read"];
 var structStarted = false;
 var defineStarted = false;
 var importStarted = false;
@@ -19,6 +21,7 @@ var originalLength;
 
 function errorCheck(arrayOfLines, blockStack) {
     uninitialisedVariables.push(new uninitialisedVariable("T", "null", 1, 0, arrayOfLines.length));
+    uninitialisedVariables.push(new uninitialisedVariable("T", "read", 1, 0, arrayOfLines.length));
     document.getElementById(outputBox).value = "";
     getStructs(arrayOfLines);
     originalLength = arrayOfLines.length;
@@ -171,7 +174,7 @@ function getStructs(lines) {
         allTypes = new RegExp(primTypes.source.replace(")", '') + sep.source + structList + ")");
     }
     validTypesWithoutArrays = allTypes;
-    var arrayRegex = /((\[.*\])?)?\s*/;
+    var arrayRegex = /((\[.*\])?)*\s*/;
     var allTypesWithArrays = new RegExp(allTypes.source + arrayRegex.source);
     validTypes = allTypesWithArrays;
 }
@@ -186,9 +189,11 @@ function checkLine(line, lineNumber) {
     }
     if (line.search("print ") == 0) {
         isCorrect = checkPrint(line, lineNumber);
+    } else if (line.search("read ") == 0) {
+        //Read on its own
     } else if (line.search(validTypes) == 0) {
         if (!structStarted) {
-            isCorrect = checkVarDec(line, lineNumber);
+            isCorrect = checkVarDec(line, lineNumber, false);
         }
     } else if (isValid("var", line)) {
         isCorrect = checkVarAss(line, lineNumber);
@@ -278,15 +283,16 @@ function checkPrintVar(line, lineNumber) {
     if (varName.match(/.*\[.*\]/) != null) {
         var varWithoutIndex = varName.substr(0, varName.indexOf("["));
         var varEntry = findUnVar(varWithoutIndex);
-        var index = varName.substr(varName.indexOf("["));
-        index = index.substr(1, index.length - 2).replace(/\s/g, '');
-        if (!checkBrackets(index, "int")) {
-            addError("Invalid array index on line " + lineNumber);
-            return false;
-        }
-        if (!checkReturnType(index, "int", lineNumber)) {
-            addError("Invalid array index on line " + lineNumber);
-            return false;
+        var indexes = getArrayLengthsDec(varName);
+        for (var i = 0; i < indexes.length; i++) {
+            if (!checkBrackets(indexes[i], "int")) {
+                addError("Invalid array index on line " + lineNumber);
+                return false;
+            }
+            if (!checkReturnType(indexes[i], "int", lineNumber)) {
+                addError("Invalid array index on line " + lineNumber);
+                return false;
+            }
         }
     } else if (varName.match(/.*\..*/) != null) {
         var s = varName.substr(0, varName.indexOf("."));
@@ -299,7 +305,7 @@ function checkPrintVar(line, lineNumber) {
             addError("Invalid print statement on line " + lineNumber);
             return false;
         }
-        if (!checkVariableAssignment("", "", varName, true, lineNumber)) {
+        if (!checkVariableAssignment("", "", varName, true, lineNumber, false)) {
             return false;
         }
     } else {
@@ -335,68 +341,13 @@ function checkPrintStr(line, lineNumber) {
                 i += 1;
                 var varName = output.substr(i, output.length - i);
                 varName = varName.match(/^(.+?)\}/);
-                if (varName != null) {
-                    varName = varName[1];
-                }
                 if (varName == null) {
-                    addError("Invalid {} use on line " + lineNumber + ". Check that the variable is enclosed in {}.");
+                    addError("No expression found between {} on line " + lineNumber);
                     return false;
-                } else {
-                    if (varName.match(/.*\[.*\]/) != null) {
-                        var varWithoutIndex = varName.substr(0, varName.indexOf("["));
-                        var varEntry = findUnVar(varWithoutIndex);
-                        var index = varName.substr(varName.indexOf("["));
-                        index = index.substr(1, index.length - 2).replace(/\s/g, '');
-                        if (!checkBrackets(index, "int")) {
-                            addError("Invalid array index on line " + lineNumber);
-                            return false;
-                        }
-                        if (!checkReturnType(index, "int", lineNumber)) {
-                            addError("Invalid array index on line " + lineNumber);
-                            return false;
-                        }
-                    } else if (varName.match(/.*\..*/) != null) {
-                        var s = varName.substr(0, varName.indexOf("."));
-                        var varEntry = findUnVar(s);
-                        if (varEntry == null) {
-                            addError("Undeclared variable on line " + lineNumber);
-                            return false;
-                        }
-                        if (!checkBrackets(varName, varEntry.type)) {
-                            addError("Invalid print statement on line " + lineNumber);
-                            return false;
-                        }
-                        if (!checkVariableAssignment("", "", varName, true, lineNumber)) {
-                            return false;
-                        }
-                    } else {
-                        if (varName.match(/.*\(\s*.*?\s*\)/) != null) {
-                            var f = varName.substr(0, varName.indexOf("("));
-                            var func = findFuncByName(f, [varName], lineNumber);
-                            if (func == null) {
-                                addError("Can't find function on line " + lineNumber);
-                                return false;
-                            }
-                        } else {
-                            var varEntry = findUnVar(varName);
-                            if (varEntry == null) {
-                                addError("Undeclared variable on line " + lineNumber);
-                                return false;
-                            }
-                            if (varEntry.end < lineNumber && varEntry.end != 0) {
-                                addError("Variable out of scope on line " + lineNumber);
-                                return false;
-                            }
-                        }
-                    }
-                    if (varName.match(/.*\(\s*.*?\s*\)/) == null && varEntry == null) {
-                        addError("Undeclared variable on line " + lineNumber);
-                        return false;
-                    }
-                    if (varName.match(/.*\(\s*.*?\s*\)/) == null && varEntry.end < lineNumber && varEntry.end != 0) {
-                        addError("Variable out of scope on line " + lineNumber);
-                        return false;
-                    }
+                }
+                var l = "T T = " + varName[1];
+                if (!checkVarDec(l, lineNumber, true)) {
+                    return false;
                 }
                 while (output.charAt(i) != '}') {
                     i += 1;
@@ -417,7 +368,7 @@ function checkPrintStr(line, lineNumber) {
     return true;
 }
 
-function checkVarDec(line, lineNumber) {
+function checkVarDec(line, lineNumber, isPrint) {
     if (currentLevel == 0) {
         addError("Unexpected variable declaration on line " + lineNumber);
         return false;
@@ -428,11 +379,11 @@ function checkVarDec(line, lineNumber) {
         return false;
     } else {
         if (varType.match(/.*\[.*/) != null) {
-            return checkVarDecArray(line, lineNumber);
+            return checkVarDecArray(line, lineNumber, isPrint);
         } else {
             var lineWithoutType = line.substr(varType.length + 1, line.length - varType.length + 1);
             var varName = lineWithoutType.match(/^\s*[a-zA-Z_][a-zA-Z0-9_]*[^=\s]*/)[0].replace(/\s/g, '');
-            if (isKeyword(varName)) {
+            if (!isPrint && isKeyword(varName)) {
                 addError("Invalid variable name on line " + lineNumber + ". " + varName + " is a keyword. It cannot be used for a variable name.");
                 return false;
             }
@@ -446,13 +397,13 @@ function checkVarDec(line, lineNumber) {
                     if (!checkStructAssignment(varName, varType, varValue, lineNumber)) {
                         return false;
                     }
-                    if (!checkVariableAssignment("", varName, "", true, lineNumber)) {
+                    if (!checkVariableAssignment("", varName, "", true, lineNumber, isPrint)) {
                         addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                         return false;
                     }
-                    if (!defineStarted) {
+                    if (!isPrint && !defineStarted) {
                         uninitialisedVariables.push(new uninitialisedVariable(varType, varName, lineNumber, currentLevel, 0));
-                    } else {
+                    } else if (!isPrint) {
                         uninitialisedVariables.push(new uninitialisedVariable(varType, varName, lineNumber, 0, 0));
                         globalLines.push(lineNumber);
                     }
@@ -461,13 +412,13 @@ function checkVarDec(line, lineNumber) {
                         addError("Syntax error on line " + lineNumber + ". Possibly mismatched brackets or unexpected character");
                         return false;
                     }
-                    if (!checkVariableAssignment(varType, varName, varValue, true, lineNumber)) {
+                    if (!checkVariableAssignment(varType, varName, varValue, true, lineNumber, isPrint)) {
                         addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                         return false;
                     }
                 }
             } else {
-                if (!checkVariableAssignment(varType, varName, "", true, lineNumber)) {
+                if (!checkVariableAssignment(varType, varName, "", true, lineNumber, isPrint)) {
                     addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                     return false;
                 }
@@ -477,43 +428,55 @@ function checkVarDec(line, lineNumber) {
     return true;
 }
 
-function checkVarDecArray(line, lineNumber) {
-    var varTypeWithLength = line.match(/[^\]]+/)[0].concat("]");
+function checkVarDecArray(line, lineNumber, isPrint) {
+    var varTypeWithLength = line.match(/[^\s]*/)[0];
     var varTypeWithoutLength = varTypeWithLength.substr(0, varTypeWithLength.indexOf("["));
     var lineWithoutType = line.substr(varTypeWithLength.length + 1, line.length - varTypeWithLength.length + 1);
     var varName = lineWithoutType.match(/^\s*[a-zA-Z_][a-zA-Z0-9_]*[^=\s]*/)[0].replace(/\s/g, '');
     var varType = varTypeWithLength.substr(0, varTypeWithLength.indexOf("["));
-    var arrayLength = varTypeWithLength.substr(varTypeWithLength.indexOf("["));
-    arrayLength = arrayLength.substr(1, arrayLength.length - 2).replace(/\s/g, '');
-    if (arrayLength != "") {
-        if (!checkBrackets(arrayLength, "int")) {
-            addError("Invalid array length on line " + lineNumber);
-            return false;
-        }
-        if (!checkReturnType(arrayLength, "int", lineNumber)) {
-            addError("Invalid array length on line " + lineNumber);
-            return false;
+    var arrayLengths = getArrayLengthsDec(varTypeWithLength);
+    for (var i = 0; i < arrayLengths.length; i++) {
+        if (arrayLengths[i] != "") {
+            if (!checkBrackets(arrayLengths[i], "int")) {
+                addError("Invalid array length on line " + lineNumber);
+                return false;
+            }
+            if (!checkReturnType(arrayLengths[i], "int", lineNumber)) {
+                addError("Invalid array length on line " + lineNumber);
+                return false;
+            }
         }
     }
-    if (!checkVariableAssignment("", varName, "", true, lineNumber)) {
+    if (!checkVariableAssignment("", varName, "", true, lineNumber, isPrint)) {
         addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
         return false;
     }
     if (!isDefaultValueDeclaring(line)) {
         var varValue = lineWithoutType.match(/=\s*(.*)$/)[1].toString().trim();
         if (varValue.match(/^\[.*$/) != null) {
-            if (!checkArrayAssignment(varValue, varTypeWithoutLength, lineNumber)) {
+            if (!checkArrayAssignment(varValue, varTypeWithoutLength, lineNumber, isPrint)) {
+                return false;
+            }
+        }
+        else {
+            var typeWithUnspecificLengths = removeArrayLengths([varTypeWithLength]);
+            if (!checkVariableAssignment(typeWithUnspecificLengths, varName, varValue, true, lineNumber, isPrint)) {
+                addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                 return false;
             }
         }
     }
-    uninitialisedVariables.push(new uninitialisedVariable(varTypeWithLength, varName, lineNumber, currentLevel, 0));
+    if (!isPrint) {
+        uninitialisedVariables.push(new uninitialisedVariable(varTypeWithLength, varName, lineNumber, currentLevel, 0));
+    }
     return true;
 }
 
-function checkArrayAssignment(array, type, lineNumber) {
+function checkArrayAssignment(array, type, lineNumber, isPrint) {
+    return true;
     array = array.substr(1, array.length - 2);
     array = array.split(/,/);
+    array = trimArray(array);
     for (var i = 0; i < array.length; i++) {
         if (type == "bool") {
             if (!checkPredicate("", array[i], lineNumber, true, false)) {
@@ -524,7 +487,7 @@ function checkArrayAssignment(array, type, lineNumber) {
                 addError("Syntax error on line " + lineNumber + ". Possibly mismatched brackets or unexpected character");
                 return false;
             }
-            if (!checkVariableAssignment(type, "", array[i], true, lineNumber)) {
+            if (!checkVariableAssignment(type, "", array[i], true, lineNumber, isPrint)) {
                 addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                 return false;
             }
@@ -543,16 +506,16 @@ function checkVarAss(line, lineNumber) {
     var varValue = line.match(/=\s*(.*)$/)[1].toString().replace(/\s/g, '');
     if (varName.match(/.*\[/) != null) {
         var varNameWithoutIndex = varName.substr(0, varName.indexOf("["));
-        var arrayIndex = varName.substr(varName.indexOf("["));
-        arrayIndex = arrayIndex.substr(1, arrayIndex.length - 2);
-        //arrayIndex = evaluateExpression(arrayIndex, "int");
-        if (!checkBrackets(arrayIndex, "int")) {
-            addError("Invalid array length on line " + lineNumber);
-            return false;
-        }
-        if (!checkReturnType(arrayIndex, "int", lineNumber)) {
-            addError("Invalid array length on line " + lineNumber);
-            return false;
+        var arrayIndexes = getArrayLengthsDec(varName);
+        for (var i = 0; i < arrayIndexes; i++) {
+            if (!checkBrackets(arrayIndexes[i], "int")) {
+                addError("Invalid array length on line " + lineNumber);
+                return false;
+            }
+            if (!checkReturnType(arrayIndexes[i], "int", lineNumber)) {
+                addError("Invalid array length on line " + lineNumber);
+                return false;
+            }
         }
         if (varNameWithoutIndex.match(/.*\..*/) != null) {
             var m = varNameWithoutIndex.substr(varNameWithoutIndex.indexOf(".") + 1);
@@ -593,7 +556,7 @@ function checkVarAss(line, lineNumber) {
                 return false;
             }
         } else {
-            if (!checkVariableAssignment(arrayEntryType, varNameWithoutIndex, varValue, false, lineNumber)) {
+            if (!checkVariableAssignment(arrayEntryType, varNameWithoutIndex, varValue, false, lineNumber, false)) {
                 addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                 return false;
             }
@@ -637,12 +600,12 @@ function checkVarAss(line, lineNumber) {
                 if (!checkStructAssignment(varName, varType, varValue, lineNumber)) {
                     return false;
                 }
-                if (!checkVariableAssignment("", varName, "", false, lineNumber)) {
+                if (!checkVariableAssignment("", varName, "", false, lineNumber, false)) {
                     addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                     return false;
                 }
             } else {
-                if (!checkVariableAssignment(varType, varName, varValue, false, lineNumber)) {
+                if (!checkVariableAssignment(varType, varName, varValue, false, lineNumber, false)) {
                     addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
                     return false;
                 }
@@ -1017,7 +980,7 @@ function checkPredicate(varName, pred, lineNumber, isDeclaring, isIf) {
     var varTypes = getTypeOfVarsAndLits(varList, funcs, lineNumber);
     var newExp = pred.replace(/\(*(true|false)\)*/g, '{');
     newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(.*?\)/g, '}');
-    newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*?\])?)?/g, '@v');
+    newExp = newExp.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*?\])?)*/g, '@v');
     newExp = newExp.replace(/{/g, '@b');
     newExp = newExp.replace(/}/g, '@p');
     newExp = newExp.replace(/\(*'.*'\)*/g, '@c');
@@ -1143,7 +1106,7 @@ function checkSinglePredicate(singlePredList, lineNumber) {
 
 function checkStructAssignment(varName, varType, varValue, lineNumber) {
     varValue = varValue.trim();
-    var structRegex = /(\(\s*(.*)\s*(,\s*(.*))*\s*\)|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?)/;
+    var structRegex = /(\(\s*(.*)\s*(,\s*(.*))*\s*\)|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)*)/;
     if (varValue.match(structRegex) == null) {
         addError("Invalid struct assignment on line " + lineNumber);
         return false;
@@ -1170,15 +1133,22 @@ function checkStructAssignment(varName, varType, varValue, lineNumber) {
 }
 
 function getMembersFromDec(dec) {
-    var arraysSep = dec.split(/\]\s*,/);
+    var arraysSep = dec.split(/,(?!(?:[^\[]*\([^\]]*\))*[^\[\]]*\))/);
     arraysSep = removeBlankEntries(arraysSep);
     var finalList = [];
+    var buff = "";
     for (var i = 0; i < arraysSep.length; i++) {
-        if (arraysSep[i].charAt(0) == "[") {
-            finalList.push(arraysSep[i].concat("]"));
-        } else {
-            var extraSep = arraysSep[i].split(",");
-            finalList = finalList.concat(extraSep);
+        if (arraysSep[i].trim().charAt(0) == "[") {
+            buff += arraysSep[i];
+        } else if (arraysSep[i].trim().charAt(arraysSep[i].length - 1) == "]") {
+        buff += "," + arraysSep[i];
+        finalList.push(buff);
+        buff = "";
+    }else if (buff != "") {
+            buff += "," + arraysSep[i];
+        }
+             else {
+            finalList.push(arraysSep[i]);
         }
     }
     return finalList;
@@ -1284,7 +1254,8 @@ function checkReturnType(exp, type, lineNumber) {
     return true;
 }
 
-function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNumber) {
+function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNumber, isPrint) {
+    varValue = varValue.replace(/\s/g, '');
     var varEntry = findUnVar(varName);
     if (varEntry == null && !isDeclaring) {
         return false;
@@ -1304,12 +1275,12 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
         funcs = [];
     }
     var funcNames = removeArgs(funcs);
-    var arrays = varValue.match(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[.*?\]/g);
+    var arrays = varValue.match(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*(\[.*?\])+/g);
     if (arrays == null) {
         arrays = [];
     }
     var expWithoutFuncsAndArrays = varValue.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*\s*\)/g, '');
-    expWithoutFuncsAndArrays = expWithoutFuncsAndArrays.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*\[.*?\]/g, '');
+    expWithoutFuncsAndArrays = expWithoutFuncsAndArrays.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*(\[.*?\])+/g, '');
     var expList = expWithoutFuncsAndArrays.toString().split(/\+|-|\*|\/|\(|\)|&&|\|\|/);
     expList = removeBlankEntries(expList);
     expList = getNegativesAndSubraction(expList);
@@ -1319,7 +1290,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     if (!allDeclared(varList, funcs, lineNumber)) {
         return false;
     }
-    if (varName != "" && varType != "" && isDeclaring) {
+    if (!isPrint && varName != "" && varType != "" && isDeclaring) {
         if (defineStarted) {
             var newVar = new uninitialisedVariable(varType, varName, lineNumber, 0, 0);
             globalLines.push(lineNumber);
@@ -1346,7 +1317,6 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
 function checkTypesMatch(expList, type, fs, lineNumber) {
     var typeList = getTypeOfVarsAndLits(expList, fs, lineNumber);
     typeList = removeArrayLengths(typeList);
-
     for (var i = 0; i < typeList.length; i++) {
         if (typeList[i] == "T" && type.match(/.*\[\]/) == null) {
             return true;
@@ -1378,7 +1348,7 @@ function checkTypesMatch(expList, type, fs, lineNumber) {
             if (type != "char" && type != "string") {
                 return false;
             }
-            if (expList[i].match(/^('(.|\\n)'|[a-zA-Z_][a-zA-Z0-9_]*(\[.*\])?)$/) == null) {
+            if (expList[i].match(/^('(.|\\n)'|[a-zA-Z_][a-zA-Z0-9_]*(\[.*\])*)$/) == null) {
                 return false;
             }
         } else if (typeList[i] == "void") {
@@ -1402,15 +1372,16 @@ function allDeclared(vs, fs, lineNumber) {
         var varWithoutIndex = vs[i];
         if (vs[i].match(/.*\[.*\]/) != null) {
             varWithoutIndex = varWithoutIndex.substr(0, varWithoutIndex.indexOf("["));
-            var index = vs[i].substr(vs[i].indexOf("["));
-            index = index.substr(1, index.length - 2);
-            if (!checkBrackets(index, "int")) {
-                addError("Invalid array length on line " + lineNumber);
-                return false;
-            }
-            if (!checkReturnType(index, "int", lineNumber)) {
-                addError("Invalid array length on line " + lineNumber);
-                return false;
+            var indexes = getArrayLengthsDec(vs[i]);
+            for (var i = 0; i < indexes.length; i++) {
+                if (!checkBrackets(indexes[i], "int")) {
+                    addError("Invalid array length on line " + lineNumber);
+                    return false;
+                }
+                if (!checkReturnType(indexes[i], "int", lineNumber)) {
+                    addError("Invalid array length on line " + lineNumber);
+                    return false;
+                }
             }
         } else if (vs[i].match(/.*\..*/) != null) {
             varWithoutIndex = allDeclaredStruct(vs[i], lineNumber);

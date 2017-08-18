@@ -1,4 +1,5 @@
 <?php
+    //Created by Ross Hunter Copyright (c) 2017 
     include("connect.php");
     $username = $_POST['user'];
     $data = "SELECT * FROM program WHERE username = '$username'";

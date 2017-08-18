@@ -1,3 +1,5 @@
+/* Created by Ross Hunter Copyright (c) 2017 */
+
 body {
     max-width: 100%;
     margin: 0;
@@ -38,6 +40,7 @@ a {
 #navbar {
     max-width: 100%;
     max-height: 70px;
+    top:0;
 }
 
 #loginRegTab {
@@ -664,6 +667,10 @@ li a {
     height: 80%;
 }
 
+.mainBody {
+    height: 80%;
+}
+
 #bodyDiv {
     height: 100%;
 }
@@ -680,6 +687,31 @@ li a {
     float: left;
 }
 
+#learnBarDiv {
+    margin-top: 50px;
+    width: 250px;
+    height: 100%;
+}
+
+#blankTab {
+    background-color: #ffffff;
+    border-color: #fbfbfb;
+}
+
+#blankTab:hover {
+    cursor: auto;
+}
+
+#extraTab, #contactTab {
+    border-bottom-color: #fbfbfb;
+}
+
+#learnBarTable {
+    background-color: #fbfbfb;
+    height: 100%;
+    float: left;
+}
+
 #userSettingsDiv {
     margin-top: 50px;
     margin-left: 50px;
@@ -689,6 +721,21 @@ li a {
 }
 
 #userSettingsTable {
+    background-color: #fbfbfb;
+    height: 100%;
+}
+
+#learnContentDiv {
+    margin-top: 50px;
+    margin-left: 50px;
+    width: 70%;
+    height: 100%;
+    float: left;
+    overflow-y:scroll;
+    overflow-x:hidden;
+}
+
+#learnContentTable {
     background-color: #fbfbfb;
     height: 100%;
 }
@@ -712,16 +759,26 @@ li a {
     border-bottom-width: 1px;
     border-bottom-color: #dddddd;
     position: relative;
+    border-right-style: none;
+    border-right-width: 5px;
+    border-right-color: #79cdcd;
 }
 
-.optionTD:hover, .optionTD:focus {
+.optionTD:focus {
+    border-right-style: solid;
+    border-right-width: 5px;
+    border-right-color: #79cdcd;
+    cursor: pointer;
+}
+
+.optionTD:hover {
     background-color: #eeeeee;
     cursor: pointer;
 }
 
 
 #librariesTab {
-    border-color: #fbfbfb;
+    border-bottom-color: #fbfbfb;
 }
 
 #usernameTR {
@@ -756,6 +813,34 @@ li a {
     font-family: "Bebas";
     font-size: 20pt;
     color: #79cdcd;
+}
+
+#learnContent {
+    padding-left: 20px;
+    padding-top: 20px;
+    height: 100%;
+    width: 100%;
+    display: block;
+    margin: 0;
+}
+
+.learnTitle {
+    font-family: "Bebas";
+    font-size: 28pt;
+    color: #79cdcd;
+}
+
+.learnSubTitle {
+    font-family: "Bebas";
+    font-size: 20pt;
+    color: #79cdcd;
+}
+
+.learnText {
+    padding-top: 10px;
+    padding-right: 30px;
+    font-size: 12pt;
+    font-family: "Open Sans";
 }
 
 .detailsChange {
@@ -854,6 +939,7 @@ li a {
     float: left;
     width: 20%;
     margin-left: 40px;
+    height: 100%;
 }
 
 .newProgramLibraryButton {
@@ -1193,8 +1279,6 @@ tr:nth-child(even) {
     transition: width 0.4s ease-in-out;
 }
 
-#searchBar:focus {}
-
 .searchResultsHeader {
     font-size: 10pt;
 }
@@ -1362,6 +1446,79 @@ tr:nth-child(even) {
     border-left-width: 0.5px;
     border-left-color: #999999;
     margin-left: -1px;
+}
+
+.bulletPoints li {
+    float: left;
+    display: list-item;
+    margin-left: 20px;
+    list-style-type: disc;
+}
+
+#variablesContent {
+    display: none;
+}
+
+#inputOutputContent {
+    display: none;
+}
+
+#controlStructuresContent {
+    display: none;
+}
+
+#arraysContent {
+    display: none;
+}
+
+#structsContent {
+    display: none;
+}
+
+#functionsContent {
+    display: none;
+}
+
+#importsContent {
+    display: none;
+}
+
+#extraContent {
+    display: none;
+}
+
+#contactContent {
+    display: none;
+}
+
+.footer {
+    bottom: 0;
+    width: 100%;
+    font-family: "Open Sans";
+    font-size: 8pt;
+    color: #aaaaaa;
+    position: absolute;
+    text-align: right;
+    padding-bottom: 4px;
+    z-index: 2;
+}
+
+.footerLink {
+    text-align: right;
+    padding-right: 10px;
+}
+
+.footerLink:hover {
+    cursor: pointer;
+}
+
+#aboutLink {
+
+}
+
+.socialMediaIcon {
+    width: 30px;
+    height: 30px;
 }
 
 

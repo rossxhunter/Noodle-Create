@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 //Global variables
 
 var equalityList = ["=", ">", "<"];
@@ -212,11 +214,11 @@ function isKeyword(name) {
 function isValid(type, line) {
     switch (type) {
         case "print":
-            return line.match(/^print\s+(".*"|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
+            return line.match(/^print\s+(".*"|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)*)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*$/) != null;
         case "printVar":
-            return line.match(/^print\s+([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*)\s*$/) != null;
+            return line.match(/^print\s+([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)*|[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*?\s*\)|[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*)\s*$/) != null;
         case "var":
-            return line.match(/^([a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)?|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null;
+            return line.match(/^([a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*((\[.*\])?)*|[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_]*)\s*=\s*.*$/) != null;
         case "if":
             return line.match(/^(if|else\s+if|else)\s*\(.+\)\s*$/) != null;
         case "for":
@@ -392,12 +394,12 @@ function getTypeOfArgs(args, reqArgs, lineNumber) {
 }
 
 function getTypeOfSingleArg(arg, reqType, lineNumber) {
-    var funcs = arg.match(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*((-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?)(\s*,\s*(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?))*)?\s*\)/g);
+    var funcs = arg.match(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*((-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)*)(\s*,\s*(-?[0-9]+(\.[0-9]+)?|"[^]*"|'[^]+'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)*))*)?\s*\)/g);
     if (funcs == null) {
         funcs = [];
     }
     var funcNames = removeArgs(funcs);
-    var expWithoutFuncs = arg.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*(([0-9]+(\.[0-9]+)?|".*"|'.*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?)(\s*,\s*([0-9]+(\.[0-9]+)?|".*"|'.*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)?))*)?\s*\)/g, '');
+    var expWithoutFuncs = arg.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*(([0-9]+(\.[0-9]+)?|".*"|'.*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)*)(\s*,\s*([0-9]+(\.[0-9]+)?|".*"|'.*'|true|false|[a-zA-Z_][a-zA-Z0-9_]*((\[.*\])?)*))*)?\s*\)/g, '');
     var expList = expWithoutFuncs.toString().split(/\+|-|\*|\/|\(|\)|&&|\|\|/);
     expList = removeBlankEntries(expList);
     expList = getNegativesAndSubraction(expList);
@@ -485,10 +487,13 @@ function getTypeOfVarsAndLits(es, fs, lineNumber) {
                 if (es[i] == "[]") {
                     evaluatedList.push("T[]");
                 }
-                var withoutI = es[i].substr(1, es[i].length - 2);
+                var withoutI = es[i].match(/\[+([^\]]+)\]/)[1];
                 var sp = withoutI.split(/,/);
                 var aType = getArrayElemType(sp[0]);
                 var t = aType + "[]";
+                if (es[i].match(/^\[.*\[.*\].*\]$/) != null) {
+                    t = t + "[]";
+                }
                 evaluatedList.push(t);
             }
             else {
@@ -562,8 +567,8 @@ function getMemberType(s, m) {
 
 function removeArrayLengths(types) {
     for (var i = 0; i < types.length; i++) {
-        if (types[i].match(/.*\[.*\]/) != null) {
-            types[i] = types[i].replace(/\[.*\]/, '\[\]');
+        if (types[i].match(/.*\[.*?\]/) != null) {
+            types[i] = types[i].replace(/\[.*?\]/g, '\[\]');
         }
     }
     return types;
@@ -638,4 +643,22 @@ function findMemberType(s, m) {
             return struct.memberTypes[i];
         }
     }
+}
+
+function trimArray(a) {
+    var retArray = [];
+    for (var i = 0; i < a.length; i++) {
+        retArray.push(a[i].trim());
+    }
+    return retArray;
+}
+
+function getArrayLengthsDec(type) {
+    var lengths = type.substr(type.indexOf("["));
+    var arrayLengths = lengths.split(/\]/);
+    arrayLengths = removeBlankEntries(arrayLengths);
+    for (var i = 0; i < arrayLengths.length; i++) {
+        arrayLengths[i] = arrayLengths[i].substr(1, arrayLengths[i].length - 1);
+    }
+    return arrayLengths;
 }

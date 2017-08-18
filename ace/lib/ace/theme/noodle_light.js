@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 define(function(require, exports, module) {
 
 exports.isDark = false;

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<!--Created by Ross Hunter Copyright (c) 2017 -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Noodle Create - Collaborative Coding - Learn</title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="/assets/js/moment.js"></script>
+  <script type="text/javascript" src="/assets/js/script.js"></script>
+  <script type="text/javascript" src="/assets/js/loginRegister.js"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet" />
+  <script src="/assets/js/jquery.easydropdown.js" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="/assets/css/easydropdown.css" />
+  <script>
+    $(document).ready(function() {
+      checkSession();
+      var tab = document.getElementById("introductionTab");
+      tab.focus();
+      learnContent = document.getElementById("introductionContent");
+      learnTab = document.getElementById("introductionTab");
+    });
+  </script>
+</head>
+
+<body>
+  <div id="bodyDiv">
+    <div id="navbar">
+      <ul>
+        <li id="logo">
+          <a href="/create"> <img src="/assets/images/logo.png" /> </a>
+        </li>
+        <li>
+          <a id="loginRegTabLink"><span class="userTabNotSelected" onclick="loginRegisterClick()" id="loginRegTab">Login/Register</span></a>
+        </li>
+        <li class="currentTab"><a href="/learn">Learn</a></li>
+        <li class="normalTab"><a href="/create">Create</a></li>
+      </ul>
+    </div>
+    <div class="mainBody">
+
+      <div id="loginRegisterModal" class="modal">
+        <div id="loginRegisterModalContent" class="modal-content">
+          <div id="loginRegisterTabsContainer">
+            <div class="loginRegister-header" id="loginTab" onclick="showLogin()">
+              <h2>Login</h2>
+            </div>
+            <div class="loginRegister-header" id="registerTab" onclick="showRegister()">
+              <h2>Register</h2>
+            </div>
+          </div>
+
+          <div class="modal-body">
+            <br />
+            <p>
+              <form id="loginRegisterForm">
+                <input class="loginField" type="text" onfocus="validateUsername()" oninput="validateUsername()" id="usernameField" placeholder="Username" maxlength="16" required pattern="[a-zA-Z0-9_-]{3,16}">
+                <span id="usernameCorrection" class="form_hint"></span>
+                <input class="loginField" type="email" onfocus="validateEmail()" id="emailField" oninput="validateEmail()" placeholder="Email" maxlength="255" required>
+                <span id="emailCorrection" class="form_hint"></span>
+                <input class="loginField" oninput="validatePassword()" onfocus="validatePassword()" id="passwordField" placeholder="Password" type="password" maxlength="24" required>
+                <span id="passwordCorrection" class="form_hint"></span>
+              </form>
+            </p>
+          </div>
+          <div onclick="loginRegisterDone()" class="modal-footer">
+            <h3 id="loginRegisterButtonText">Login</h3>
+          </div>
+        </div>
+      </div>
+      <div id="leftSide">
+        <div id="learnBarDiv">
+          <div id="learnBarTable" class="table-div" style="width:100%">
+            <div id="introductionTR" class="tr-div optionsBarOption">
+              <div id="introductionTab" onClick="introductionClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Introduction
+                </div>
+              </div>
+            </div>
+            <div id="variablesTR" class="tr-div optionsBarOption">
+              <div id="variablesTab" onClick="variablesClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Variables
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="inputOutputTab" onClick="inputOutputClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Input/Output
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="controlStructuresTab" onClick="controlStructuresClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Control Structures
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="arraysTab" onClick="arraysClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Arrays
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="structsTab" onClick="structsClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Structs
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="functionsTab" onClick="functionsClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Functions
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="importsTab" onClick="importsClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Imports
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="extraTab" onClick="extraClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Extra
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="blankTab" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+
+                </div>
+              </div>
+            </div>
+            <div class="tr-div optionsBarOption">
+              <div id="contactTab" onClick="contactClick()" class="td-div optionTD" tabindex="-1">
+                <div class="optionsText">
+                  Contact
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!--
+        <div id="bowlAnimationDiv">
+          <img src="/assets/images/emptyBowl.png" id="bowlAnimation" />
+        </div>
+    -->
+      </div>
+      <div id="learnContentDiv">
+        <div id="learnContentTable" class="table-div" style="width:100%">
+          <div id="learnMainTR" class="tr-div">
+            <div id="learnMainTD" class="td-div">
+              <div id="learnContent">
+                <div id="introductionContent">
+                  <div class="learnTitle">
+                    Introduction
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      Noodle is a new programming language created for the purpose of education and collaborating on small programming projects. It is extremely lightweight, consisting of only basic language concepts with a view to remove much of the baggage of modern languages
+                      to aid the learning of new programmers. The language is browser based where users can import others’ code to help their own projects.
+
+                    </p>
+                    <p>
+                      If the philosophy of Noodle is to be summarised in one word it would be ABSTRACTION. The user does not need to know unnecessary details, they just need the fundamental tools to build their program. The other main points of the language are below.
+                      <ul class="bulletPoints">
+                        <li>
+                          Types must be respected (unless obvious implicit casting is possible) (WELL FORMED)
+                        </li>
+                        <li>
+                          Ugly characters must be avoided (PRETTINESS)
+                        </li>
+                        <li>
+                          As simple as possible without reducing intuitiveness and readability (SIMPLE)
+                        </li>
+                        <li>
+                          Lightweight (expanded by libraries) (LIGHTWEIGHT)
+                        </li>
+                        <li>
+                          Style, although good practice and is encouraged, is in general not enforced (FREEDOM)
+                        </li>
+                      </ul>
+                    </p>
+                    <p>
+                      Noodle has no semicolons. Expressions are separated by line breaks. Code blocks i.e. if statements are ended with end statments (no curly braces). Indentation is not required (although is good practice).
+                    </p>
+                    <p>
+                      There are two types of files you can make on Noodle Create - programs and libraries. Programs are regular noodle programs which contain a main function and produce some kind of output. Libraries are similar to programs except that they do not contain
+                      a main function. They can be imported into other libraries and programs. For example, a library containing math functions like rounding can be imported into a program calculating areas of circles. The library import means that the
+                      functions do not need to be redefined.
+                    </p>
+                  </div>
+                </div>
+
+                <div id="variablesContent">
+                  <div class="learnTitle">
+                    Variables
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      Variables are the basic building blocks of computer programs. They are named containers for values. For example, if you wanted to store a number and do something interesting with it, you would store the number in a variable. A variable has a data type
+                      associated with it. For example, storing a number would require a variable with a number data type. There are two main data types - primitive types and composite types. Primitive types are built into the language and can always be
+                      used.
+                    </p>
+                    <p>
+                      There are 5 primitive data types for Noodle:
+
+                      <ul class="bulletPoints">
+                        <li>
+                          int - Integers (whole numbers)
+                        </li>
+                        <br />
+                        <li>
+                          float - Floating Point numbers (numbers with a decimal point)
+                        </li>
+                        <br />
+                        <li>
+                          char - Single characters
+                        </li>
+                        <br />
+                        <li>
+                          string - Sequences of characters
+                        </li>
+                        <br />
+                        <li>
+                          bool - True or False
+                        </li>
+                      </ul>
+                    </p>
+                    Example:
+                    <pre>
+                        <code>
+  int i = 4
+  i = i - 5
+                        </code>
+                      </pre>
+
+                    <p>
+                      Composite data types are made up of primitive data types. Examples are arrays and structs which are explored in later sections.
+                    </p>
+                    <p>
+                      Variables can be defined either locally or globally. Local variables can only be used in the block in which they have been defined. Global varibales can be used everywhere in the program. It is best practice to avoid using global variables where possible.
+                      There are some important reasons for this:
+
+                      <ul class="bulletPoints">
+                        <li>
+                          Local variable names can be reused in different blocks since they are out of scope of each other. Once a global variable is defined, its name cannot be used for any other variable.
+                        </li>
+                        <li>
+                          Once the block containing a local variable has been completed, the variable is destroyed - this frees up memory.
+                        </li>
+                      </ul>
+                    </p>
+                    A local variable can simply be defined in its block when it is required. A global variable needs to be declared in a <code>define</code> block. Example:
+                    <pre>
+                          <code>
+  define
+    int num = 8
+  end
+
+  func main()
+    print num
+  end
+                          </code>
+                        </pre>
+                  </div>
+                </div>
+
+                <div id="inputOutputContent">
+                  <div class="learnTitle">
+                    Input/Output
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      To make any useful program, you need to have some way of inputting data to be processed and some way of getting an output in a meaningful form.
+                    </p>
+                    <p>
+                      The command to input data is <code>read</code>. <code>read</code> can be used like a variable. You can place it in declarations and assignments.
+                    </p>
+                    <pre>
+                      <code>
+  int i = read
+                      </code>
+                    </pre>
+                    <p>
+                      The command to output data is <code>print</code>. <code>print</code> is used as a stand-alone statement which can take two forms. You can print a single variable.
+                    </p>
+                    <pre>
+                      <code>
+  int i = 8
+  print i
+                      </code>
+                    </pre>
+                    <p>
+                      The second form allows you to print a string
+                    </p>
+                    <pre>
+                      <code>
+  print "Hello World!"
+                      </code>
+                    </pre>
+                    <p>
+                      You can include expressions in the second form enclosed in {}
+                    </p>
+                    <pre>
+                      <code>
+  int i = 8
+  print "The value of i is {i}. Double i is {i * 2}"
+                      </code>
+                    </pre>
+                  </div>
+                </div>
+                <div id="controlStructuresContent">
+                  <div class="learnTitle">
+                    Control Structures
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      To make your programs powerful, you need to have some way of controlling the flow of the program though loops and conditions.
+                    </p>
+                    <p>
+                      If statments:
+                      <pre>
+                            <code>
+  if (x == 8 && y > 5)
+    print "Chow"
+  else
+    print "Ramen"
+  end
+                            </code>
+                        </pre> While loops
+                      <pre>
+                            <code>
+  while (x > 0)
+    print x
+  end
+                            </code>
+                        </pre> Do while loops
+                      <pre>
+                            <code>
+  do while (x > 0)
+    print x
+  end
+                            </code>
+                        </pre> There are 4 types of for loops. Type 1 - used for simply looping x times. No stepper variable is needed.
+                      <pre>
+                            <code>
+  for (5)
+    print "Chow"
+  end
+                            </code>
+                        </pre> Type 2 - used for looping x times and a stepper variable is needed to index an array for example. The stepper variable starts at 0 and the loop terminates when the stepper ¡ the limit. If you want to
+                      change the
+                      <pre>
+                            <code>
+  for (x, 5)
+    print x
+  end
+                            </code>
+                        </pre> For loops type 3
+                      <pre>
+                            <code>
+  for (x, 2, 5)
+    print x
+  end
+                            </code>
+                        </pre> For loops type 4
+                      <pre>
+                            <code>
+  for (x, 2, 5, 2)
+    print "Chow"
+  end
+                            </code>
+                        </pre>
+
+                    </p>
+                  </div>
+                </div>
+                <div id="arraysContent">
+                  <div class="learnTitle">
+                    Arrays
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      You can create arrays of primitive types. You are able to choose a static array or a dynamic array. If you put a number x between the square brackets, a static array of length x will be created. If no number is between the square brackets, a dynamic array
+                      will be created.
+                      <pre>
+                            <code>
+  int[3] i = [4,5,6] //Static array, length 3
+  int[] i            //Dynamic array
+                            </code>
+                        </pre>
+                    </p>
+                  </div>
+                </div>
+                <div id="structsContent">
+                  <div class="learnTitle">
+                    Structs
+                  </div>
+                  <div class="learnText">
+                    <p>
+
+                      You can create structures.
+                      <pre>
+                            <code>
+  struct person
+    string name
+    int age
+  end
+                            </code>
+                        </pre> Create an instance of a structure like so
+                      <pre>
+                            <code>
+  person ross = ("Ross", 19)
+                            </code>
+                        </pre> Access properties of a structure like so
+                      <pre>
+                            <code>
+  int rossAge = ross.age
+                            </code>
+                        </pre> You can also create arrays of structures
+                      <pre>
+                            <code>
+  person p1 = ("Ross", 19)
+  person p2 = ("Mary", 48)
+  person p3 = ("John", 35)
+  person[3] people = [p1,p2,p3]
+                            </code>
+                        </pre>
+                    </p>
+                  </div>
+                </div>
+                <div id="functionsContent">
+                  <div class="learnTitle">
+                    Functions
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      Sometimes you need to reuse sections of your code. Instead of copying and pasting the same code, you can use functions. The main function is the function which is called first. From there you can call other self-defined functions. For example, if you
+                      wanted to calculate the area of 3 different circles you could make a function to calculate the area of one circle with an arbitrary radius and call this function for the 3 circles - no code duplication!
+                    </p>
+                    <p>
+                      A function can return a value (but it doesn't have to). The return value must have a return type which is specified in the function definition. A function must have a name and it may have parameters (or arguments). These arguments must themselves have
+                      a type which is specificed in the definition. Here is an example of a function.
+                    </p>
+                    <pre>
+                        <code>
+  func(int) divideTwo(int x)
+    return x/2
+  end
+                        </code>
+                    </pre> This function is called <code>divideTwo</code>, it promises to return an <code>int</code> and it takes one <code>int</code> parameter called <code>x</code>. The function returns the passed value divided by
+                    two, as specified in the <code>return</code> statement.
+                    <p>
+                      Here is an example of a function which doesn't return a value.
+                    </p>
+                    <pre>
+                        <code>
+  func printString(string s)
+    print s
+  end
+                        </code>
+                    </pre> Here is an example of a function with no parameters.
+                    <pre>
+                        <code>
+  func printHelloWorld()
+    print "Hello World!"
+  end
+                        </code>
+                    </pre>
+                  </div>
+                </div>
+                <div id="importsContent">
+                  <div class="learnTitle">
+                    Imports
+                  </div>
+                  <div class="learnText">
+                    <p>
+                      When making larger programs, you may need to use external functions created by other people. This means you don't have to make them yourself which can save you a lot of time. For example, if you are making a program to calculate the difference between
+                      two dates, it would be useful to import a library which calculates the number of days/hours in a year/month etc.
+                    </p>
+                    <p>
+                      To import a library use the <code>import</code> keyword to start the block. In the block, individual imports are made with the username of the creator of the library followed by a / and the library name. Here is an example program
+                      which imports a library.
+                    </p>
+                    <pre>
+                        <code>
+  import
+    noodle/math
+  end
+
+  func main()
+    float num = 7.8
+    int roundedNum = round(num)
+  end
+                        </code>
+                    </pre> This program imports the library <code>math</code> made by the user <code>noodle</code>. The library contains a function <code>round</code> which is used in this program.
+                    <p>
+                      Structs defined in imported libraries are also useable.
+                    </p>
+                    <p>
+                      Make sure there are no name clashes with functions/structs defined in the program and imported library. Also, two functions with the same name in two different imported libraries will cause a clash as well.
+                    </p>
+                  </div>
+                </div>
+                <div id="extraContent">
+                  <div class="learnTitle">
+                    Extra
+                  </div>
+                  <div class="learnText">
+                    <div class="learnSubTitle">
+                      Generics
+                    </div>
+                    <p>
+                      Sometimes you do not know the exact type of a variable. A generic type <code>T</code> can be used for this.
+                    </p>
+                    <pre>
+                        <code>
+  func printGeneric(T x)
+    print x
+  end
+                        </code>
+                    </pre>
+                    <div class="learnSubTitle">
+                      Future
+                    </div>
+                    <p>
+                        In future versions of Noodle, the following features may be included:
+                        <ul class="bulletPoints">
+                            <li>
+                                n-dimensional arrays (n > 2)
+                            </li>
+                            <br />
+                            <li>
+                                Functional programming
+                            </li>
+                            <br />
+                            <li>
+                                Graphics
+                            </li>
+                            <br />
+                            <li>
+                                Error throwing and assertions
+                            </li>
+                            <br />
+                            <li>
+                                Switch statements
+                            </li>
+                            <br />
+                            <li>
+                                Enums
+                            </li>
+                        </ul>
+                    </p>
+                  </div>
+                </div>
+                <div id="contactContent">
+                  <div class="learnTitle">
+                    Contact
+                  </div>
+                  <div class="learnText">
+                      <div class="learnSubTitle">
+                        Support
+                      </div>
+                    <p>
+                        If you have spotted any issues or need help, contact <a href="mailto:support@noodlecreate.com?subject=Support">support@noodlecreate.com</a>
+                    </p>
+                    <div class="learnSubTitle">
+                      Enquiries
+                    </div>
+                    <p>
+                        For business enquiries, contact <a href="mailto:enquires@noodlecreate.com?subject=Enquiry">enquiries@noodlecreate.com</a>
+                    </p>
+                    <div class="learnSubTitle">
+                      Social Media
+                    </div>
+                    <p>
+                        <a href="https://www.facebook.com/noodlecreate/" target="_blank"><img class="socialMediaIcon" src="/assets/images/facebook.png" /></a>
+                        <a href="https://twitter.com/noodlecreate" target="_blank"><img class="socialMediaIcon" src="/assets/images/twitter.png" /></a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+          <span class="footerLink" id="legalLink">Legal</span>
+          <span class="footerLink" id="aboutLink">About</span>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

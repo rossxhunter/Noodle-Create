@@ -1,4 +1,5 @@
 <?php
+    //Created by Ross Hunter Copyright (c) 2017
     include("connect.php");
     $name = $_POST['name'];
     $data = "SELECT *  FROM library WHERE name LIKE '%{$name}%' COLLATE 'latin1_general_ci' UNION SELECT *  FROM program WHERE name LIKE '%{$name}%' COLLATE 'latin1_general_ci'";

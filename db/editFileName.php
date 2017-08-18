@@ -1,4 +1,5 @@
 <?php
+    //Created by Ross Hunter Copyright (c) 2017
     include("connect.php");
     $user = $_POST['user'];
     $oldName = $_POST['name'];

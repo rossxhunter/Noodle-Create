@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 define(function(require, exports, module) {
     "use strict";
 
@@ -10,7 +12,7 @@ define(function(require, exports, module) {
         // regexps are ordered -> the first match is used
 
         var keywords = (
-            "func|if|else|end|for|while|do|print|true|false|return|null|struct|define|import"
+            "func|if|else|end|for|while|do|print|true|false|return|null|struct|define|import|read"
         );
         var typeList = (
             "int|float|char|bool|string|T"

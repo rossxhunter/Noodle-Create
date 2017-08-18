@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 function register(u, e, p) {
     registerValid = false;
     if (!validateRegister(u, e, p)) {

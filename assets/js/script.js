@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 var linesArray;
 var sizeMode = 0;
 var startedCoding = false;
@@ -11,6 +13,9 @@ var isLib = false;
 var outputBox = "";
 var unsaved;
 var loaded = false;
+var executeRet = null;
+var learnContent;
+var learnTab;
 
 function setDimensions() {
     setSize0();
@@ -45,9 +50,15 @@ function setSize0() {
 
 window.addEventListener('resize', function(event) {
     switch (sizeMode) {
-        case 0 : setSize0(); break;
-        case 1 : setSize1(); break;
-        case 2 : setSize2(); break;
+        case 0:
+            setSize0();
+            break;
+        case 1:
+            setSize1();
+            break;
+        case 2:
+            setSize2();
+            break;
     }
 });
 
@@ -522,7 +533,7 @@ function logoutLogout() {
     $.ajax({
         url: "/db/logout.php",
         success: function() {
-            window.open("/index", '_self', "IndexPage");
+            window.open("/create", '_self', "IndexPage");
             sessionUser = null;
         }
     });
@@ -651,7 +662,7 @@ function saveNameValidate(name) {
     } else if (name.length > 32) {
         document.getElementById('fileNameCorrection').innerHTML = "Name too long";
         document.getElementById('fileNameCorrection').style.display = "block";
-    } else if (name.match(/^[a-zA-Z0-9_-]{3,32}$/) == null) {
+    } else if (name.match(/^[a-zA-Z0-9_-\s]{3,32}$/) == null) {
         document.getElementById('fileNameCorrection').innerHTML = "No special characters";
         document.getElementById('fileNameCorrection').style.display = "block";
     } else {
@@ -1326,6 +1337,96 @@ function pencilClick() {
     editor.setValue(editor.getValue(), -1);
 }
 
+function introductionClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#introductionContent').css('display', 'block');
+    $('#introductionTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("introductionContent");
+    learnTab = document.getElementById("introductionTab");
+}
+
+function variablesClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#variablesContent').css('display', 'block');
+    $('#variablesTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("variablesContent");
+    learnTab = document.getElementById("variablesTab");
+}
+
+function inputOutputClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#inputOutputContent').css('display', 'block');
+    $('#inputOutputTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("inputOutputContent");
+    learnTab = document.getElementById("inputOutputTab");
+}
+
+function controlStructuresClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#controlStructuresContent').css('display', 'block');
+    $('#controlStructuresTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("controlStructuresContent");
+    learnTab = document.getElementById("controlStructuresTab");
+}
+
+function arraysClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#arraysContent').css('display', 'block');
+    $('#arraysTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("arraysContent");
+    learnTab = document.getElementById("arraysTab");
+}
+
+function structsClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#structsContent').css('display', 'block');
+    $('#structsTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("structsContent");
+    learnTab = document.getElementById("structsTab");
+}
+
+function functionsClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#functionsContent').css('display', 'block');
+    $('#functionsTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("functionsContent");
+    learnTab = document.getElementById("functionsTab");
+}
+
+function importsClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#importsContent').css('display', 'block');
+    $('#importsTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("importsContent");
+    learnTab = document.getElementById("importsTab");
+}
+
+function extraClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#extraContent').css('display', 'block');
+    $('#extraTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("extraContent");
+    learnTab = document.getElementById("extraTab");
+}
+
+function contactClick() {
+    learnContent.style.display = 'none';
+    learnTab.style.borderRightStyle = 'none';
+    $('#contactContent').css('display', 'block');
+    $('#contactTab').css('border-right-style', 'solid');
+    learnContent = document.getElementById("contactContent");
+    learnTab = document.getElementById("contactTab");
+}
+
 var currentMarker;
 
 function noodle(code, isMain) {
@@ -1367,6 +1468,7 @@ function noodle(code, isMain) {
         increment = [];
         shouldReturn = false;
         variables.push(new variable("T", "null", null));
+        variables.push(new variable("T", "read", null));
         for (var i = 0; i < globalLines.length; i++) {
             execute(linesArray, globalLines[i] - 1, globalLines[i]);
         }
@@ -1379,73 +1481,94 @@ function noodle(code, isMain) {
 }
 
 function execute(arrayOfLines, i, endLine) {
-    for (var j = i; j < endLine; j++) {
-        decode(arrayOfLines[j].replace(/^\s+/, ''), j);
-        if (shouldReturn) {
-            shouldReturn = false;
-            return;
-        }
-        if (endStack[endStack.length - 1] == true) {
-            if (codeBlockStack[codeBlockStack.length - 1] == "while") {
-                addEndLine(j + 1);
-                whileCount[whileCount.length - 1].count += 1;
-                if (anyWhilesOverflow()) {
-                    return;
-                }
-                if (whileCount[whileCount.length - 1].ended == false) {
-                    j = whileCount[whileCount.length - 1].line - 1;
-                } else {
-                    whileCount.pop();
-                }
-                codeBlockStack.pop();
-                endStack.pop();
-            } else {
-                return j;
-            }
-        }
-        if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length - 1] == true) {
-            finishStack.pop();
-            finishStack.push(false);
-            var inc = parseInt(increment.pop());
-            var start = parseInt(currentStepper.pop());
-            var end = parseInt(target.pop());
-            var stepper = stepperVar.pop();
-            var l;
-            var count = 0;
-            var overflow = false;
-            var equality = equalityStack.pop();
-            if (equality == null) {
-                if (start <= end) {
-                    equality = "<";
-                } else {
-                    equality = ">";
-                }
-            }
-            while (equalityHolds(start, end, equality) && !overflow) {
-                l = execute(arrayOfLines, j + 1, endLine);
-                endStack[endStack.length - 1] = false;
-                if (stepper == "") {
-                    start += inc;
-                } else {
-                    start = updateStepper(stepper, inc);
-                }
-                count += 1;
-                if (count > 1000) {
-                    overflow = true;
-                }
-            }
-            if (overflow) {
-                var line = j + 1
-                addError("Stack overflow on line " + line);
+    if (i == endLine) {
+        return;
+    }
+    var output = decode(arrayOfLines[i].replace(/^\s+/, ''), i);
+    if (output != null && output != undefined) {
+        document.getElementById(outputBox).value += output;
+        //setTimeout(function(){
+            return continueExecute(arrayOfLines, i, endLine);
+        //}, 0);
+    }
+    else {
+        return continueExecute(arrayOfLines, i, endLine);
+    }
+
+
+}
+
+function continueExecute(arrayOfLines, i, endLine) {
+    if (i == endLine) {
+        return;
+    }
+    if (shouldReturn) {
+        shouldReturn = false;
+        return;
+    }
+    if (endStack[endStack.length - 1] == true) {
+        if (codeBlockStack[codeBlockStack.length - 1] == "while") {
+            addEndLine(i + 1);
+            whileCount[whileCount.length - 1].count += 1;
+            if (anyWhilesOverflow()) {
                 return;
             }
-            endStack.pop();
-            finishStack.pop();
+            if (whileCount[whileCount.length - 1].ended == false) {
+                i = whileCount[whileCount.length - 1].line - 1;
+            } else {
+                whileCount.pop();
+            }
             codeBlockStack.pop();
-            stepperVar.pop();
-            j = l;
+            endStack.pop();
+        } else {
+            executeRet = i;
+            return i;
         }
     }
+    if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length - 1] == true) {
+        finishStack.pop();
+        finishStack.push(false);
+        var inc = parseInt(increment.pop());
+        var start = parseInt(currentStepper.pop());
+        var end = parseInt(target.pop());
+        var stepper = stepperVar.pop();
+        var l;
+        var count = 0;
+        var overflow = false;
+        var equality = equalityStack.pop();
+        if (equality == null) {
+            if (start <= end) {
+                equality = "<";
+            } else {
+                equality = ">";
+            }
+        }
+        while (equalityHolds(start, end, equality) && !overflow) {
+            l = execute(arrayOfLines, i + 1, endLine);
+            //l = executeRet;
+            endStack[endStack.length - 1] = false;
+            if (stepper == "") {
+                start += inc;
+            } else {
+                start = updateStepper(stepper, inc);
+            }
+            count += 1;
+            if (count > 1000) {
+                overflow = true;
+            }
+        }
+        if (overflow) {
+            var line = i + 1
+            addError("Stack overflow on line " + line);
+            return;
+        }
+        endStack.pop();
+        finishStack.pop();
+        codeBlockStack.pop();
+        stepperVar.pop();
+        i = l;
+    }
+    return execute(arrayOfLines, i + 1, endLine);
 }
 
 function addEndLine(end) {

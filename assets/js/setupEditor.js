@@ -1,3 +1,5 @@
+//Created by Ross Hunter Copyright (c) 2017
+
 function setupEditor() {
     // setup paths
     require.config({
