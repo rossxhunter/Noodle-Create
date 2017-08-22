@@ -1167,6 +1167,14 @@ tr:nth-child(even) {
     width: 30%;
 }
 
+#legalModalContent {
+    width: 30%;
+}
+
+#aboutModalContent {
+    width: 30%;
+}
+
 #previewCode {
     padding: 20px;
     height: 200px;
@@ -1437,6 +1445,17 @@ tr:nth-child(even) {
 }
 
 #descriptionModalText {
+    font-size: 12pt;
+    font-family: "Josefin Sans";
+}
+
+#legalModalText {
+    font-size: 12pt;
+    font-family: "Josefin Sans";
+    text-align: center;
+}
+
+#aboutModalText {
     font-size: 12pt;
     font-family: "Josefin Sans";
 }

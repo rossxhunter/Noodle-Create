@@ -16,7 +16,7 @@ var currentStepper = [];
 var target = [];
 var increment = [];
 var equalityStack = [];
-var funcBlockCount = 0;
+var funcBlockCount = [];
 var readEntered = false;
 var readInput;
 var whileCount = [];
@@ -51,7 +51,7 @@ function decode(line, lineNumber) {
             shouldSkip = !decodeIf(line, lineNumber);
             satisfied = !shouldSkip;
             codeBlockStack.push("if");
-            funcBlockCount += 1;
+            funcBlockCount[funcBlockCount.length - 1] += 1;
         } else if (line.search(/else\s+if\s*\(/) == 0) {
             shouldSkip = true;
             codeBlockStack.pop();
@@ -65,12 +65,12 @@ function decode(line, lineNumber) {
             endStack.push(false);
             finishStack.push(true);
             codeBlockStack.push("for");
-            funcBlockCount += 1;
+            funcBlockCount[funcBlockCount.length - 1] += 1;
         } else if (line.match(/(do\s+)?while\s*\(/) != null) {
             shouldSkip = !decodeWhile(line, lineNumber);
             endStack.push(false);
             codeBlockStack.push("while");
-            funcBlockCount += 1;
+            funcBlockCount[funcBlockCount.length - 1] += 1;
             if (firstWhile(lineNumber)) {
                 whileCount.push(new whileCounter(lineNumber, 0, false, 0));
                 if (line.match(/do\s+while\s*\(/) != null) {
@@ -81,13 +81,18 @@ function decode(line, lineNumber) {
                 whileCount[whileCount.length - 1].ended = true;
             }
         } else if (line.trim().match(/^(return|return\s.*)$/) != null) {
-            for (var i = 0; i < funcBlockCount; i++) {
+            for (var i = 0; i < funcBlockCount[funcBlockCount.length - 1]; i++) {
                 codeBlockStack.pop();
             }
+            codeBlockStack.pop();
+            funcBlockCount.pop();
             decodeReturn(line, lineNumber);
         } else if (line.search(/\s*func\s+main\s*\(\s*\)\s*/) == 0) {
-
+            codeBlockStack.push("func");
+            funcBlockCount.push(0);
         } else if (line.replace(/^\s+/, '').search(/func(\s*\(|\s)/) == 0) {
+            codeBlockStack.push("func");
+            funcBlockCount.push(0);
             decodeFunc(line);
         } else if (line.trim().search(/^.*\(.*\)$/) == 0 && line.trim().match(/^\/\/.*$/) == null) {
             decodeFuncCall(line, lineNumber);
@@ -95,12 +100,13 @@ function decode(line, lineNumber) {
             if (codeBlockStack[codeBlockStack.length - 1] == "for") {
                 endStack.pop();
                 endStack.push(true);
-
             } else if (codeBlockStack[codeBlockStack.length - 1] == "while") {
                 endStack.pop();
                 endStack.push(true);
             } else if (codeBlockStack[codeBlockStack.length - 1] == "func") {
                 shouldReturn = true;
+                funcBlockCount.pop();
+                codeBlockStack.pop();
             } else {
                 codeBlockStack.pop();
             }
@@ -115,6 +121,8 @@ function decode(line, lineNumber) {
             endStack.push(true);
         } else if (codeBlockStack[codeBlockStack.length - 1] == "func") {
             shouldReturn = true;
+            codeBlockStack.pop();
+            funcBlockCount.pop();
         } else {
             codeBlockStack.pop();
             if (codeBlockStack.length == 0) {
@@ -239,6 +247,7 @@ function decodePrint(line, lineNumber) {
     }
     output = output.toString();
     output = output.replace(/\\\\/g, '\\');
+    document.getElementById(outputBox).value += output;
     return output;
 }
 
@@ -274,6 +283,7 @@ function decodeVarDec(line, lineNumber) {
         if (varValue != null) {
             if (isStructType(varType)) {
                 varValue = decodeStruct(varType, varName, varValue, lineNumber);
+
             } else {
                 varValue = evaluateExpression(varValue, varType, lineNumber);
                 varValue = removeSpacesAndParseType(varValue, varType);
@@ -285,8 +295,8 @@ function decodeVarDec(line, lineNumber) {
     var newVar = new variable(varType, varName, varValue);
     removeOldVar(varName);
     variables.push(newVar);
-    document.getElementById(outputBox).value += newVar.name;
-    document.getElementById(outputBox).value += newVar.value;
+    //document.getElementById(outputBox).value += newVar.name;
+    //document.getElementById(outputBox).value += newVar.value;
     return varValue;
 }
 
@@ -313,11 +323,13 @@ function decodeStruct(varType, varName, varValue, lineNumber) {
 function createArray(array, type, length, line) {
     array = array.substr(1, array.length - 2);
     array = getMembersFromDec(array);
-    if (1 == 0 && length != 0 && array.length != length) {
-        addRuntimeError("Expected " + length + " elements in array but got " + array.length + " on line " + line);
-        return;
+    if (array[0].match(/^\[.*$/) == null) {
+        if (length != 0 && array.length != length) {
+            addRuntimeError("Expected " + length + " elements in array but got " + array.length + " on line " + line);
+            return;
+        }
     }
-    var retArray = []
+    var retArray = [];
     for (var i = 0; i < array.length; i++) {
         retArray.push(evaluateExpression(array[i], type, line));
     }
@@ -364,7 +376,7 @@ function decodeVarAss(line, lineNumber) {
             updateStructMem(varWithoutIndex, m, oldVarValue);
             var newVar = getMemberVal(findVar(varWithoutIndex).value, str, m);
             //document.getElementById(outputBox).value += newVar.name + index;
-            document.getElementById(outputBox).value += newVar[index];
+            //88document.getElementById(outputBox).value += newVar[index];
         } else {
             var oldVar = findVar(varWithoutIndex);
             if (oldVar.type.match(/.*\[\]/) == null && index >= oldVar.value.length) {
@@ -392,11 +404,11 @@ function decodeVarAss(line, lineNumber) {
             }
             updateVarVal(varWithoutIndex, oldVarValue);
             var newVar = findVar(varWithoutIndex);
-            document.getElementById(outputBox).value += newVar.name + indexes;
+            //document.getElementById(outputBox).value += newVar.name + indexes;
             if (indexes.length == 1) {
-                document.getElementById(outputBox).value += newVar.value[index];
+                //document.getElementById(outputBox).value += newVar.value[index];
             } else {
-                document.getElementById(outputBox).value += newVar.value[indexes[0]][indexes[1]];
+                //document.getElementById(outputBox).value += newVar.value[indexes[0]][indexes[1]];
             }
         }
     } else {
@@ -437,8 +449,8 @@ function decodeVarAss(line, lineNumber) {
             updateVarVal(varName, varValue);
         }
         var newVar = findVar(varName);
-        document.getElementById(outputBox).value += newVar.name;
-        document.getElementById(outputBox).value += newVar.value;
+        //document.getElementById(outputBox).value += newVar.name;
+        //document.getElementById(outputBox).value += newVar.value;
     }
 
 
@@ -448,7 +460,7 @@ function decodeIf(line, lineNumber) {
     var pred = line.substr(line.indexOf("("));
     var evaluatedPred = evaluateExpression(pred, "bool", lineNumber);
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
-    document.getElementById(outputBox).value += evaluatedPred;
+    //document.getElementById(outputBox).value += evaluatedPred;
     return evaluatedPred;
 }
 
@@ -502,7 +514,7 @@ function decodeWhile(line, lineNumber) {
     var pred = line.substr(line.indexOf("("));
     var evaluatedPred = evaluateExpression(pred, "bool", lineNumber);
     evaluatedPred = evaluatedPred == true || evaluatedPred == "true";
-    document.getElementById(outputBox).value += evaluatedPred;
+    //document.getElementById(outputBox).value += evaluatedPred;
     return evaluatedPred;
 }
 
@@ -556,6 +568,7 @@ function evaluateExpression(exp, type, lineNumber) {
                 res = '\n';
             }
         }
+
         return res;
     }
     var i = 0;

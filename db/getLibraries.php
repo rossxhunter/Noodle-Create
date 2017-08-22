@@ -4,7 +4,10 @@
     $username = $_POST['user'];
     $data = "SELECT * FROM library WHERE username = '$username'";
     $q = mysqli_query($con, $data);
-    $result = mysqli_fetch_all($q, MYSQLI_ASSOC);
+    $result = array();
+    while ($res = mysqli_fetch_array($q, MYSQLI_ASSOC)) {
+        array_push($result, $res);
+    }
     if (empty($result)) {
         die("Username not found");
     }
