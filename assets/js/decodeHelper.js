@@ -246,6 +246,11 @@ function getArrayElem(a, i) {
 function getMemberVal(s, struct, m) {
     for (var i = 0; i < s.length; i++) {
         if (m == struct.memberNames[i]) {
+            if (struct.memberTypes[i] == "string") {
+                s[i] = "\"" + s[i] + "\"";
+            } else if (struct.memberTypes[i] == "char") {
+                s[i] = "\'" + s[i] + "\'";
+            }
             return s[i];
         }
     }
@@ -339,21 +344,21 @@ function castOp(op) {
     if (op == null) {
         return op;
     }
-
+    /*
     if (getTypeOfVarsAndLits([op.toString()])[0] == "int") {
         return parseFloat(op);
     } else if (getTypeOfVarsAndLits([op.toString()])[0] == "char") {
         op = op.replace(/\'/g, '');
         return "\"".concat(op).concat("\"");
     }
-
+*/
     return op;
 }
 
 function getFuncReturnVal(name, args, fs, lineNumber) {
     var func = findFuncByName(name, fs, lineNumber);
     passedArgs = args;
-    execute(linesArray, func.start - 1, func.end - 1);
+    execute(linesArray, func.start - 1, func.end);
     if (returnV != null && func.type == "string") {
         returnV = "\"" + returnV + "\"";
     } else if (returnV != null && func.type == "char") {
@@ -512,10 +517,11 @@ function addStructBraces(output, types) {
 }
 
 function addArrayBrackets(value, array, indexes) {
-    if (array[0][0] != null && array[0][0] != undefined) {
+    if (Object.prototype.toString.call( array[0] ) === '[object Array]') {
         var numDims = 2
     }
     else {
+
         var numDims = 1
     }
     var numLevels = numDims - indexes.length;

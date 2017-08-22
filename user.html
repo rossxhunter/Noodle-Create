@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Noodle Create - Collaborative Coding</title>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="/assets/js/jquery.js"></script>
   <script type="text/javascript" src="/assets/js/moment.js"></script>
   <script type="text/javascript" src="/assets/js/script.js"></script>
   <script type="text/javascript" src="/assets/js/loginRegister.js"></script>
@@ -177,6 +177,30 @@
           </div>
         </div>
       </div>
+      <div id="legalModal" class="modal">
+        <div id="legalModalContent" class="modal-content">
+          <div class="modal-body">
+            <p id="legalModalText">
+              Copyright &copy; Ross Hunter 2017.
+            </p>
+          </div>
+          <div onclick="legalClose()" class="modal-footer">
+            <h3 id="legalModalCloseText">Close</h3>
+          </div>
+        </div>
+      </div>
+      <div id="aboutModal" class="modal">
+        <div id="aboutModalContent" class="modal-content">
+          <div class="modal-body">
+            <p id="aboutModalText">
+              Noodle Create was created in July/August 2017 by Ross Hunter.
+            </p>
+          </div>
+          <div onclick="aboutClose()" class="modal-footer">
+            <h3 id="aboutModalCloseText">Close</h3>
+          </div>
+        </div>
+      </div>
       <div id="leftSide">
         <div id="optionsBarDiv">
           <div id="optionsBarTable" class="table-div" style="width:100%">
@@ -332,8 +356,8 @@
         </div>
       </div>
       <div class="footer">
-          <span class="footerLink" id="legalLink">Legal</span>
-          <span class="footerLink" id="aboutLink">About</span>
+          <span onclick="legalOpen()" class="footerLink" id="legalLink">Legal</span>
+          <span onclick="aboutOpen()" class="footerLink" id="aboutLink">About</span>
       </div>
     </div>
   </div>

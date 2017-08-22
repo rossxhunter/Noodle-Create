@@ -457,8 +457,7 @@ function checkVarDecArray(line, lineNumber, isPrint) {
             if (!checkArrayAssignment(varValue, varTypeWithoutLength, lineNumber, isPrint)) {
                 return false;
             }
-        }
-        else {
+        } else {
             var typeWithUnspecificLengths = removeArrayLengths([varTypeWithLength]);
             if (!checkVariableAssignment(typeWithUnspecificLengths, varName, varValue, true, lineNumber, isPrint)) {
                 addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
@@ -473,23 +472,47 @@ function checkVarDecArray(line, lineNumber, isPrint) {
 }
 
 function checkArrayAssignment(array, type, lineNumber, isPrint) {
-    return true;
+    //return true;
     array = array.substr(1, array.length - 2);
-    array = array.split(/,/);
-    array = trimArray(array);
-    for (var i = 0; i < array.length; i++) {
-        if (type == "bool") {
-            if (!checkPredicate("", array[i], lineNumber, true, false)) {
-                return false;
+    array = getMembersFromDec(array);
+    //array = trimArray(array);
+    //array = removeBlankEntries(array);
+    if (array[0].match(/^\[.*$/) != null) {
+        for (var i = 0; i < array.length; i++) {
+            array[i] = array[i].substr(1, array[i].length - 2);
+            array[i] = getMembersFromDec(array[i]);
+            for (var j = 0; j < array[0].length; j++) {
+                if (type == "bool") {
+                    if (!checkPredicate("", array[i][j], lineNumber, true, false)) {
+                        return false;
+                    }
+                } else {
+                    if (!checkBrackets(array[i][j], type)) {
+                        addError("Syntax error on line " + lineNumber + ". Possibly mismatched brackets or unexpected character");
+                        return false;
+                    }
+                    if (!checkVariableAssignment(type, "", array[i][j], true, lineNumber, isPrint)) {
+                        addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
+                        return false;
+                    }
+                }
             }
-        } else {
-            if (!checkBrackets(array[i], type)) {
-                addError("Syntax error on line " + lineNumber + ". Possibly mismatched brackets or unexpected character");
-                return false;
-            }
-            if (!checkVariableAssignment(type, "", array[i], true, lineNumber, isPrint)) {
-                addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
-                return false;
+        }
+    } else {
+        for (var i = 0; i < array.length; i++) {
+            if (type == "bool") {
+                if (!checkPredicate("", array[i], lineNumber, true, false)) {
+                    return false;
+                }
+            } else {
+                if (!checkBrackets(array[i], type)) {
+                    addError("Syntax error on line " + lineNumber + ". Possibly mismatched brackets or unexpected character");
+                    return false;
+                }
+                if (!checkVariableAssignment(type, "", array[i], true, lineNumber, isPrint)) {
+                    addError("Invalid variable assignment on line " + lineNumber + ". Check that variables are declared and are of the correct type");
+                    return false;
+                }
             }
         }
     }
@@ -1141,13 +1164,12 @@ function getMembersFromDec(dec) {
         if (arraysSep[i].trim().charAt(0) == "[") {
             buff += arraysSep[i];
         } else if (arraysSep[i].trim().charAt(arraysSep[i].length - 1) == "]") {
-        buff += "," + arraysSep[i];
-        finalList.push(buff);
-        buff = "";
-    }else if (buff != "") {
             buff += "," + arraysSep[i];
-        }
-             else {
+            finalList.push(buff);
+            buff = "";
+        } else if (buff != "") {
+            buff += "," + arraysSep[i];
+        } else {
             finalList.push(arraysSep[i]);
         }
     }
@@ -1270,7 +1292,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
             return false;
         }
     }
-    var funcs = varValue.match(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*\s*\)/g);
+    var funcs = varValue.match(/[a-zA-Z_][a-zA-Z0-9_]*\(.*?\)/g);
     if (funcs == null) {
         funcs = [];
     }
@@ -1279,7 +1301,7 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     if (arrays == null) {
         arrays = [];
     }
-    var expWithoutFuncsAndArrays = varValue.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*\s*\)/g, '');
+    var expWithoutFuncsAndArrays = varValue.replace(/[a-zA-Z_][a-zA-Z0-9_]*\(\s*.*\s*?\)/g, '');
     expWithoutFuncsAndArrays = expWithoutFuncsAndArrays.replace(/[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*(\[.*?\])+/g, '');
     var expList = expWithoutFuncsAndArrays.toString().split(/\+|-|\*|\/|\(|\)|&&|\|\|/);
     expList = removeBlankEntries(expList);
@@ -1288,6 +1310,8 @@ function checkVariableAssignment(varType, varName, varValue, isDeclaring, lineNu
     litList = getLiteralExpListWithoutOperatorsAndVars(expList);
     var varList = getVarsFromExp(expList);
     if (!allDeclared(varList, funcs, lineNumber)) {
+        window.alert(varList);
+        window.alert(funcs);
         return false;
     }
     if (!isPrint && varName != "" && varType != "" && isDeclaring) {

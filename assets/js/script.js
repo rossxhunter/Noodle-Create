@@ -755,6 +755,11 @@ function loginRegisterDone() {
         var validRegistration = register(document.getElementById('usernameField').value, document.getElementById('emailField').value, document.getElementById('passwordField').value);
         if (validRegistration) {
             document.getElementById('loginRegisterModal').style.display = "none";
+            startedCoding = true;
+            sessionUser = document.getElementById('usernameField').value;
+            $('#welcome').fadeOut('slow', function() {
+                $('#mainTableDiv').css('visibility', 'visible').hide().fadeIn('slow');
+            });
         }
     }
 }
@@ -1109,6 +1114,23 @@ function descriptionClose() {
     $('#descriptionModal').css('display', 'none');
 }
 
+function legalClose() {
+    $('#legalModal').css('display', 'none');
+}
+
+function aboutClose() {
+    $('#aboutModal').css('display', 'none');
+}
+
+function legalOpen() {
+    $('#legalModal').css('display', 'block');
+}
+
+function aboutOpen() {
+    $('#aboutModal').css('display', 'block');
+}
+
+
 function searchResultsUpdate() {
     var searchQuery = $('#searchBar').val();
     if (searchQuery == "") {
@@ -1173,12 +1195,13 @@ function openDescription(cell) {
     var user = cell.parentNode.parentNode.cells[1].innerHTML;
     user = user.substr(user.indexOf(">") + 1);
     user = user.substr(0, user.indexOf("<"));
+    var isProgram = getIsProgram(name, user);
     $.ajax({
         async: false,
         data: {
             "user": user,
             "name": name,
-            "isProgram": true
+            "isProgram": isProgram
         },
         type: "POST",
         url: "/db/getProgramLibrary.php",
@@ -1344,6 +1367,7 @@ function introductionClick() {
     $('#introductionTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("introductionContent");
     learnTab = document.getElementById("introductionTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function variablesClick() {
@@ -1353,6 +1377,7 @@ function variablesClick() {
     $('#variablesTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("variablesContent");
     learnTab = document.getElementById("variablesTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function inputOutputClick() {
@@ -1362,6 +1387,7 @@ function inputOutputClick() {
     $('#inputOutputTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("inputOutputContent");
     learnTab = document.getElementById("inputOutputTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function controlStructuresClick() {
@@ -1371,6 +1397,7 @@ function controlStructuresClick() {
     $('#controlStructuresTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("controlStructuresContent");
     learnTab = document.getElementById("controlStructuresTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function arraysClick() {
@@ -1380,6 +1407,7 @@ function arraysClick() {
     $('#arraysTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("arraysContent");
     learnTab = document.getElementById("arraysTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function structsClick() {
@@ -1389,6 +1417,7 @@ function structsClick() {
     $('#structsTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("structsContent");
     learnTab = document.getElementById("structsTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function functionsClick() {
@@ -1398,6 +1427,7 @@ function functionsClick() {
     $('#functionsTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("functionsContent");
     learnTab = document.getElementById("functionsTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function importsClick() {
@@ -1407,6 +1437,7 @@ function importsClick() {
     $('#importsTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("importsContent");
     learnTab = document.getElementById("importsTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function extraClick() {
@@ -1416,6 +1447,7 @@ function extraClick() {
     $('#extraTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("extraContent");
     learnTab = document.getElementById("extraTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 function contactClick() {
@@ -1425,6 +1457,7 @@ function contactClick() {
     $('#contactTab').css('border-right-style', 'solid');
     learnContent = document.getElementById("contactContent");
     learnTab = document.getElementById("contactTab");
+    document.getElementById("learnContentDiv").scrollTop = 0;
 }
 
 var currentMarker;
@@ -1479,7 +1512,7 @@ function noodle(code, isMain) {
         }
     }
 }
-
+/*
 function execute(arrayOfLines, i, endLine) {
     if (i == endLine) {
         return;
@@ -1570,7 +1603,77 @@ function continueExecute(arrayOfLines, i, endLine) {
     }
     return execute(arrayOfLines, i + 1, endLine);
 }
+*/
 
+function execute(arrayOfLines, i, endLine) {
+    for (var j = i; j < endLine; j++) {
+        decode(arrayOfLines[j].replace(/^\s+/, ''), j);
+        if (shouldReturn) {
+            shouldReturn = false;
+            return;
+        }
+        if (endStack[endStack.length - 1] == true) {
+            if (codeBlockStack[codeBlockStack.length - 1] == "while") {
+                addEndLine(j + 1);
+                whileCount[whileCount.length - 1].count += 1;
+                if (anyWhilesOverflow()) {
+                    return;
+                }
+                if (whileCount[whileCount.length - 1].ended == false) {
+                    j = whileCount[whileCount.length - 1].line - 1;
+                } else {
+                    whileCount.pop();
+                }
+                codeBlockStack.pop();
+                endStack.pop();
+            } else {
+                return j;
+            }
+        }
+        if (codeBlockStack[codeBlockStack.length - 1] == "for" && finishStack[finishStack.length - 1] == true) {
+            finishStack.pop();
+            finishStack.push(false);
+            var inc = parseInt(increment.pop());
+            var start = parseInt(currentStepper.pop());
+            var end = parseInt(target.pop());
+            var stepper = stepperVar.pop();
+            var l;
+            var count = 0;
+            var overflow = false;
+            var equality = equalityStack.pop();
+            if (equality == null) {
+                if (start <= end) {
+                    equality = "<";
+                } else {
+                    equality = ">";
+                }
+            }
+            while (equalityHolds(start, end, equality) && !overflow) {
+                l = execute(arrayOfLines, j + 1, endLine);
+                endStack[endStack.length - 1] = false;
+                if (stepper == "") {
+                    start += inc;
+                } else {
+                    start = updateStepper(stepper, inc);
+                }
+                count += 1;
+                if (count > 1000) {
+                    overflow = true;
+                }
+            }
+            if (overflow) {
+                var line = j + 1
+                addError("Stack overflow on line " + line);
+                return;
+            }
+            endStack.pop();
+            finishStack.pop();
+            codeBlockStack.pop();
+            stepperVar.pop();
+            j = l;
+        }
+    }
+}
 function addEndLine(end) {
     whileCount[whileCount.length - 1].end = end;
 }
